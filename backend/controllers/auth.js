@@ -4,22 +4,22 @@ import { crearUsuario, obtenerPorEmail } from '../models/user.js';
 
 export const registro = async (req, res) => {
     try {
-        const { nombre, correo_electronico, contrasena, telefono, fecha_nacimiento } = req.body;
+        const { nombre, email, password, telefono, } = req.body;
 
-        if (!nombre || !correo_electronico || !contrasena) {
+        if (!nombre || !email || !password) {
             return res.status(400).json({ error: "Faltan datos obligatorios" });
         }
 
-        const { data: usuarioExiste } = await obtenerPorEmail(correo_electronico);
+        const { data: usuarioExiste } = await obtenerPorEmail(email);
         if (usuarioExiste) {
             return res.status(400).json({ error: "El correo ya está registrado" });
         }
 
-        const hashedPassword = await bcrypt.hash(contrasena, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
         const rolPorDefecto = "usuario";
 
         const { data: nuevoUsuario, error } = await crearUsuario(
-            nombre, correo_electronico, hashedPassword, telefono, fecha_nacimiento, rolPorDefecto
+            nombre, email, hashedPassword, telefono, rolPorDefecto
         );
 
         if (error) {
@@ -32,7 +32,7 @@ export const registro = async (req, res) => {
             usuario: {
                 id: nuevoUsuario[0].id,
                 nombre: nuevoUsuario[0].nombre,
-                correo_electronico: nuevoUsuario[0].correo_electronico,
+                email: nuevoUsuario[0].email,
                 rol: nuevoUsuario[0].rol
             }
         });
@@ -45,19 +45,19 @@ export const registro = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const { correo_electronico, contrasena } = req.body;
+        const { email, password } = req.body;
 
-        if (!correo_electronico || !contrasena) {
-            return res.status(400).json({ error: "todos los campos son requeridos: correo_electronico y contrasena" });
+        if (!email || !password) {
+            return res.status(400).json({ error: "todos los campos son requeridos: email y password" });
         }
 
-        const { data: usuario } = await obtenerPorEmail(correo_electronico);
+        const { data: usuario } = await obtenerPorEmail(email);
         if (!usuario) {
             return res.status(400).json({ error: "El correo no está registrado" });
         }
 
-        const contrasenaValida = await bcrypt.compare(contrasena, usuario.contrasena);
-        if (!contrasenaValida) {
+        const passwordValida = await bcrypt.compare(password, usuario.password);
+        if (!passwordValida) {
             return res.status(400).json({ error: "Contraseña incorrecta" });
         }
 
@@ -65,7 +65,7 @@ export const login = async (req, res) => {
             {
                 id: usuario.id,
                 nombre: usuario.nombre,
-                correo_electronico: usuario.correo_electronico,
+                email: usuario.email,
                 rol: usuario.rol
             },
             process.env.JWT_SECRET,
@@ -78,7 +78,7 @@ export const login = async (req, res) => {
             usuario: {
                 id: usuario.id,
                 nombre: usuario.nombre,
-                correo_electronico: usuario.correo_electronico,
+                email: usuario.email,
                 rol: usuario.rol
             }
         });
