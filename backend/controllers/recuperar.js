@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { obtenerPorEmail, actualizarContrasena } from '../models/user.js';
-import { crearCodigo, obtenerCodigoValido, marcarCodigoUsado } from '../models/recoveryModel.js';
-import { enviarCorreo } from '../utils/mailer.js';
+import { crearCodigo, obtenerCodigoValido, marcarCodigoUsado } from '../models/recuperar.js';
+import { enviarCorreo } from '../utils/sendEmail.js';
 
 const generarCodigo = () => Math.floor(100000 + Math.random() * 900000).toString();
 
