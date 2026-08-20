@@ -1,4 +1,4 @@
-import { obtenerUsuarios, obtenerPorId, actualizarUsuario, eliminarUsuario } from "../models/usuario.js";
+import { obtenerUsuarios, obtenerPorId, actualizarUsuario, eliminarUsuario } from "../models/user.js";
 
 export const getUsuarios = async (req, res) => {
     try {
