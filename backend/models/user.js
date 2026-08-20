@@ -26,10 +26,11 @@ export const obtenerPorEmail= async(email)=>{
     .eq ('email', email)
     .single();
     return{data,error};
+
 };
 
 //Obtener un usuario por id
-export const obtenerUsuarioPorId = async (id) => {
+export const obtenerPorId = async (id) => {
     const { data,error } = await supabase
         .from('usuarios')
         .select('id, nombre, email, rol')
