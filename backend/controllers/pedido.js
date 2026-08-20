@@ -1,4 +1,4 @@
-import { crearPedido, obtenerPedidoConDetalles, obtenerPedidosPorUsuario, actualizarEstadoPedido, crearDetallePedido } from '../models/pedidoModels.js';
+import { crearPedido, obtenerPedidoConDetalles, obtenerPedidosPorUsuario, actualizarEstadoPedido, crearDetallePedido } from '../models/pedidoModel.js';
 
 export const crearPedidoConDetalles = async (req, res) => {
     try {
