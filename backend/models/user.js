@@ -49,6 +49,16 @@ export const actualizarUsuario = async (id, campos) => {
     return { data,error };
 };
 
+//actualizar solo la contraseña (usado en recuperacion de contraseña)
+export const actualizarContrasena = async (id, nuevoPassword) => {
+    const { data,error } = await supabase
+        .from('usuarios')
+        .update({ password: nuevoPassword })
+        .eq('id', id)
+        .select('id, nombre, email');
+    return { data,error };
+};
+
 //eliminar un usuario
 export const eliminarUsuario = async (id) => {
     const { data,error } = await supabase
@@ -58,6 +68,3 @@ export const eliminarUsuario = async (id) => {
         .select('id, nombre, email, rol')
         return { data,error };
 };
-   
-
-
