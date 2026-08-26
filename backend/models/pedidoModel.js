@@ -19,7 +19,7 @@ export const obtenerPedidoConDetalles = async (id) => {
         nombre,
         email
       ),
-      detalles:detalle_pedido(
+      detalles:detalle_pedidos(
         id,
         cantidad,
         precio_unitario,
