@@ -7,13 +7,13 @@ const generarCodigo = () => Math.floor(100000 + Math.random() * 900000).toString
 
 export const forgotPassword = async (req, res) => {
     try {
-        const { correo_electronico } = req.body;
+        const { email } = req.body;
 
-        if (!correo_electronico) {
+        if (!email) {
             return res.status(400).json({ error: "El correo es obligatorio" });
         }
 
-        const { data: usuario } = await obtenerPorEmail(correo_electronico);
+        const { data: usuario } = await obtenerPorEmail(email);
         if (!usuario) {
             return res.status(404).json({ error: "No existe una cuenta con ese correo" });
         }
@@ -28,7 +28,7 @@ export const forgotPassword = async (req, res) => {
         }
 
         await enviarCorreo(
-            correo_electronico,
+            email,
             "Código de recuperación - TecnoAgro",
             `<p>Tu código de recuperación es: <strong>${codigo}</strong></p><p>Expira en 15 minutos.</p>`
         );
@@ -43,13 +43,13 @@ export const forgotPassword = async (req, res) => {
 
 export const verifyCode = async (req, res) => {
     try {
-        const { correo_electronico, codigo, nueva_contrasena } = req.body;
+        const { email, codigo, nueva_contrasena } = req.body;
 
-        if (!correo_electronico || !codigo || !nueva_contrasena) {
+        if (!email || !codigo || !nueva_contrasena) {
             return res.status(400).json({ error: "Faltan datos obligatorios" });
         }
 
-        const { data: usuario } = await obtenerPorEmail(correo_electronico);
+        const { data: usuario } = await obtenerPorEmail(email);
         if (!usuario) {
             return res.status(404).json({ error: "Usuario no encontrado" });
         }

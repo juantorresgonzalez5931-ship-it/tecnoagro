@@ -42,7 +42,7 @@ export const obtenerPedidosPorUsuario = async (usuarioId) => {
     .from('pedidos')
     .select('*')
     .eq('usuario_id', usuarioId)
-    .order('fecha_pedido', { ascending: false });
+    .order('creado_en', { ascending: false });
 
   return { data, error };
 };
@@ -62,7 +62,7 @@ export const actualizarEstadoPedido = async (id, estado) => {
 
 export const crearDetallePedido = async (detalleData) => {
   const { data, error } = await supabase
-    .from('detalle_pedido')
+    .from('detalle_pedidos')
     .insert(detalleData)
     .select();
 

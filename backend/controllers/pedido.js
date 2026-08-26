@@ -19,6 +19,9 @@ export const crearPedidoConDetalles = async (req, res) => {
             usuario_id, direccion_entrega, telefono, notas, total
         });
 
+
+        console.log("Error al crear pedido:", errorPedido); 
+
         if (errorPedido || !pedido) {
             return res.status(500).json({ error: 'Error al crear pedido' });
         }
