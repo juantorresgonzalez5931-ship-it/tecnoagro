@@ -59,7 +59,7 @@ export const verifyCode = async (req, res) => {
             return res.status(400).json({ error: "Código inválido o ya usado" });
         }
 
-        if (new Date(codigoValido.expira_en) < new Date()) {
+        if (new Date(codigoValido.expires_at) < new Date()) {
             return res.status(400).json({ error: "El código ha expirado" });
         }
 

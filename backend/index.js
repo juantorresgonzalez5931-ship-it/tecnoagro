@@ -5,6 +5,8 @@ import authRoutes from './routes/auth.js';
 import pedidoRoutes from './routes/pedido.js';
 import productoRoutes from './routes/producto.js';
 import userRoutes from './routes/user.js';
+import enfermedadRoutes from './routes/enfermedad.js'; // 👈 NUEVO
+import chatRoutes from './routes/chat.js'; // 👈 NUEVO
 
 // CARGAR VARIABLES
 dotenv.config();
@@ -33,6 +35,19 @@ app.use('/users', userRoutes);
 app.use('/api', productoRoutes);
 // RUTA DE PEDIDOS
 app.use('/api', pedidoRoutes);
+// RUTA DE ENFERMEDADES 👈 NUEVO
+app.use('/api', enfermedadRoutes);
+// RUTA DE CHAT IA 👈 NUEVO
+app.use('/api', chatRoutes);
+
+// Manejador de errores global (SIEMPRE al final, después de todas las rutas)
+app.use((err, req, res, next) => {
+    console.error('ERROR CAPTURADO:', err);
+    res.status(500).json({ 
+        error: err.message || 'Error interno del servidor',
+        detalle: err.name || 'Error desconocido'
+    });
+});
 
 // CONFIGURAMOS EL PUERTO
 const PORT = process.env.PORT || 3000;
