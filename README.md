@@ -137,3 +137,7 @@ npm start
 ## 👥 Colaboración
 
 Proyecto desarrollado de forma colaborativa vía Git/GitHub. Antes de actualizar rutas de importación tras un merge, verificar los nombres reales de los archivos en el sistema de archivos.
+
+Juantorresgonzalez5931@gmail.com
+Juancarlosriveratorrez18@gmail.com
+
