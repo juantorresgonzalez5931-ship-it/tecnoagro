@@ -2,10 +2,10 @@
 import { supabase } from "../config/supabase.js";
 
 //obtener  todos los usuarios
-export const crearUsuario=async (nombre,email,password, telefono, rol)=>{
+export const crearUsuario=async (nombre,email,password, telefono, rol,codigoVerificacion)=>{
         const {data,error}=await supabase
         .from('usuarios')
-        .insert({nombre,email,password, telefono, rol})
+        .insert({nombre,email,password, telefono, rol,isVerified:false,codigoVerificacion,codigoVerificacionExpiracion})
         .select('*')
         return{data,error};
     };
