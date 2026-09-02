@@ -30,7 +30,7 @@ export const crearPedidoConDetalles = async (req, res) => {
             return res.status(500).json({ error: 'Error al crear pedido' });
         }
 
-        // 2. Crear detalles del pedido
+        // Crear detalles del pedido
         const detallesConPedido = detalles.map(d => ({
             ...d, pedido_id: pedido[0].id
         }));
@@ -38,13 +38,13 @@ export const crearPedidoConDetalles = async (req, res) => {
             await crearDetallePedido(detalle);
         }
 
-        // 3. Obtener info del usuario para el correo
+        // Obtener informacion del usuario para el correo
         // const { data: usuario } = await obtenerUsuarios(usuario_id);
 
-                // 3. Obtener info del usuario para el correo
-        const { data: usuario } = await obtenerPorId(usuario_id);
+                
+        const { data: usuario } = await obtenerPorId(usuario_id);// Obtener la informacion del usuario para el correo
 
-        // 4. ENVIAR CORREO DE CONFIRMACIÓN
+        // Enviar el correo de confirmacion 
         if (usuario && usuario.email) {
             await enviarConfirmacionPedido(
                 usuario.email,

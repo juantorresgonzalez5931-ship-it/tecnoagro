@@ -8,6 +8,7 @@ export const crearConversacion = async (usuario_id, title = 'Nueva conversación
     return { data, error };
 };
 
+
 export const obtenerConversacionesPorUsuario = async (usuario_id) => {
     const { data, error } = await supabase
         .from('conversations')
@@ -17,6 +18,7 @@ export const obtenerConversacionesPorUsuario = async (usuario_id) => {
     return { data, error };
 };
 
+// Obtener una conversación por su ID
 export const obtenerConversacionPorId = async (id) => {
     const { data, error } = await supabase
         .from('conversations')
@@ -26,6 +28,7 @@ export const obtenerConversacionPorId = async (id) => {
     return { data, error };
 };
 
+//Eliminar conversacion
 export const eliminarConversacion = async (id) => {
     const { error } = await supabase
         .from('conversations')
@@ -34,6 +37,7 @@ export const eliminarConversacion = async (id) => {
     return { error };
 };
 
+//Crear el mensaje
 export const crearMensaje = async (conversation_id, sender, content) => {
     const { data, error } = await supabase
         .from('messages')
@@ -42,6 +46,8 @@ export const crearMensaje = async (conversation_id, sender, content) => {
     return { data, error };
 };
 
+
+// Obtener mensajes por conversación
 export const obtenerMensajesPorConversacion = async (conversation_id) => {
     const { data, error } = await supabase
         .from('messages')

@@ -35,12 +35,12 @@ app.use('/users', userRoutes);
 app.use('/api', productoRoutes);
 // RUTA DE PEDIDOS
 app.use('/api', pedidoRoutes);
-// RUTA DE ENFERMEDADES 👈 NUEVO
+// RUTA DE ENFERMEDADES 
 app.use('/api', enfermedadRoutes);
-// RUTA DE CHAT IA 👈 NUEVO
+// RUTA DE CHAT IA 
 app.use('/api', chatRoutes);
 
-// Manejador de errores global (SIEMPRE al final, después de todas las rutas)
+// Manejador de errores 
 app.use((err, req, res, next) => {
     console.error('ERROR CAPTURADO:', err);
     res.status(500).json({ 

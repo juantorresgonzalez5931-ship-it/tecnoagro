@@ -10,6 +10,8 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS,
     },
 });
+
+// Función para enviar un correo electrónico
 export const enviarCorreo = async (destinatario, asunto, html) => {
     return transporter.sendMail({
         from: process.env.EMAIL_USER,
@@ -19,6 +21,7 @@ export const enviarCorreo = async (destinatario, asunto, html) => {
     });
 };
 
+// Función para enviar un correo de confirmación de registro
 export const enviarConfirmacionPedido = async (email, nombre, pedidoId, total) => {
     return transporter.sendMail({
         from: process.env.EMAIL_USER,

@@ -7,9 +7,8 @@ import {
   eliminarProducto
 } from '../models/productoModel.js';
 
-// =======================================
+
 // GET - Listar todos los productos
-// =======================================
 export const listarProductos = async (req, res) => {
   try {
     const { data, error } = await obtenerTodos();
@@ -26,9 +25,7 @@ export const listarProductos = async (req, res) => {
   }
 };
 
-// =======================================
 // GET - Obtener un producto por ID
-// =======================================
 export const obtenerProducto = async (req, res) => {
   try {
     const { id } = req.params;
@@ -45,9 +42,8 @@ export const obtenerProducto = async (req, res) => {
   }
 };
 
-// =======================================
 // GET - Obtener productos por categoría
-// =======================================
+
 export const obtenerPorCat = async (req, res) => {
   try {
     const { categoria } = req.params;
@@ -65,9 +61,9 @@ export const obtenerPorCat = async (req, res) => {
   }
 };
 
-// =======================================
+
 // POST - Crear un nuevo producto
-// =======================================
+
 export const crear = async (req, res) => {
   try {
     const { nombre, descripcion, categoria, principio_activo, precio, stock } = req.body;
@@ -76,9 +72,9 @@ export const crear = async (req, res) => {
     const imagen_url = req.file ? req.file.path : null;
 
 
-        //validacion: ahora verificamos que req.file haya entregado la url
+       
 
-    if (!nombre || !precio || !imagen_url) {
+    if (!nombre || !precio || !imagen_url) { //validacion: ahora verificamos que req.file haya entregado la url
       return res.status(400).json({ error: 'Nombre, precio e imagen_url son requeridos' });
     }
 
@@ -98,19 +94,13 @@ export const crear = async (req, res) => {
     }
 
     return res.status(201).json({ message: 'Producto creado', producto: data[0] });
-  // } catch (error) {
-  //   console.error('Error inesperado en crear:', error);
-  //   return res.status(500).json({ error: error.message });
-  // }
   } catch (error) {
     console.error('Error inesperado en crear:', error);
     return res.status(500).json({ error: error.message || 'Error desconocido' });
 }
 };
 
-// =======================================
 // PUT/PATCH - Editar un producto existente
-// =======================================
 export const editar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -128,9 +118,7 @@ export const editar = async (req, res) => {
   }
 };
 
-// =======================================
 // DELETE - Eliminar un producto
-// =======================================
 export const eliminar = async (req, res) => {
   try {
     const { id } = req.params;

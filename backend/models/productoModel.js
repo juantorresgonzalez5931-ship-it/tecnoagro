@@ -7,6 +7,7 @@ export const obtenerTodos = async () => {
   return { data, error };
 };
 
+// Obtener un producto por ID
 export const obtenerPorId = async (id) => {
   const { data, error } = await supabase
     .from('productos')
@@ -16,6 +17,7 @@ export const obtenerPorId = async (id) => {
   return { data, error };
 };
 
+// Obtener productos por categoría
 export const obtenerPorCategoria = async (categoria) => {
   const { data, error } = await supabase
     .from('productos')
@@ -24,6 +26,7 @@ export const obtenerPorCategoria = async (categoria) => {
   return { data, error };
 };
 
+// Crear un nuevo producto
 export const crearProducto = async (producto) => {
   const { data, error } = await supabase
     .from('productos')
@@ -32,6 +35,7 @@ export const crearProducto = async (producto) => {
   return { data, error };
 };
 
+//Actualizar un producto existente
 export const actualizarProducto = async (id, cambios) => {
   const { data, error } = await supabase
     .from('productos')
@@ -41,6 +45,7 @@ export const actualizarProducto = async (id, cambios) => {
   return { data, error };
 };
 
+//Eliminar un producto existente
 export const eliminarProducto = async (id) => {
   const { error } = await supabase
     .from('productos')

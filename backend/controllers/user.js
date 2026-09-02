@@ -10,7 +10,7 @@ export const getUsuarios = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
-
+//Otener un usuario por id
 export const getUsuarioPorId = async (req, res) => {
     try {
         const { id } = req.params;
@@ -23,6 +23,7 @@ export const getUsuarioPorId = async (req, res) => {
     }
 };
 
+//Actualizar un usuario
 export const updateUsuario = async (req, res) => {
     try {
         const { id } = req.params;
@@ -49,6 +50,7 @@ export const updateUsuario = async (req, res) => {
     }
 };
 
+//Borrar un usuario
 export const deleteUsuario = async (req, res) => {
     try {
         const { id } = req.params;

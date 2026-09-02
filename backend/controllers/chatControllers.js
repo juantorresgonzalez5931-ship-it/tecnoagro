@@ -15,9 +15,8 @@ const GEMINI_MODEL = 'gemini-3.6-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
 // Llama a la API de Gemini con el historial de la conversación
-// historialMensajes: [{ sender: 'user'|'assistant', content: '...' }]
 const llamarIA = async (historialMensajes) => {
-    // Gemini usa "user" y "model" (no "assistant"), y el campo se llama "parts"
+    
     const contents = historialMensajes.map(m => ({
         role: m.sender === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
@@ -68,19 +67,19 @@ export const enviarMensaje = async (req, res) => {
             conversacionId = nuevaConv[0].id;
         }
 
-        // 2. Guardar el mensaje del usuario (columna real: sender)
+        // Guardar el mensaje del usuario (columna real: sender)
         await crearMensaje(conversacionId, 'user', mensaje);
 
-        // 3. Traer el historial completo para dar contexto a la IA
+        // Traer el historial completo para dar contexto a la IA
         const { data: historial, error: errorHistorial } = await obtenerMensajesPorConversacion(conversacionId);
         if (errorHistorial) {
             return res.status(500).json({ error: 'Error al obtener el historial' });
         }
 
-        // 4. Llamar a Gemini
+        // Llamar a Gemini
         const respuestaIA = await llamarIA(historial);
 
-        // 5. Guardar la respuesta de la IA
+        // Guardar la respuesta de la IA
         await crearMensaje(conversacionId, 'assistant', respuestaIA);
 
         return res.status(200).json({

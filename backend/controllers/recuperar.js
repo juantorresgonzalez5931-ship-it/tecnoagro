@@ -19,7 +19,7 @@ export const forgotPassword = async (req, res) => {
         }
 
         const codigo = generarCodigo();
-        const expira_en = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+        const expira_en = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos para expirar el codigo
 
         const { error } = await crearCodigo(usuario.id, codigo, expira_en);
         if (error) {

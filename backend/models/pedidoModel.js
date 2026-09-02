@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 
+//Crear pedido
 export const crearPedido = async (pedidoData) => {
   const { data, error } = await supabase
     .from('pedidos')
@@ -9,6 +10,7 @@ export const crearPedido = async (pedidoData) => {
   return { data, error };
 };
 
+//Obtener pedido por id
 export const obtenerPedidoConDetalles = async (id) => {
   const { data, error } = await supabase
     .from('pedidos')
@@ -37,6 +39,7 @@ export const obtenerPedidoConDetalles = async (id) => {
   return { data, error };
 };
 
+//Obtener pedidos por usuario
 export const obtenerPedidosPorUsuario = async (usuarioId) => {
   const { data, error } = await supabase
     .from('pedidos')
@@ -47,6 +50,7 @@ export const obtenerPedidosPorUsuario = async (usuarioId) => {
   return { data, error };
 };
 
+//Actualizar estado del pedido
 export const actualizarEstadoPedido = async (id, estado) => {
   const { data, error } = await supabase
     .from('pedidos')
@@ -60,6 +64,7 @@ export const actualizarEstadoPedido = async (id, estado) => {
   return { data, error };
 };
 
+//Crear detalle del pedido
 export const crearDetallePedido = async (detalleData) => {
   const { data, error } = await supabase
     .from('detalle_pedidos')
