@@ -9,7 +9,7 @@ import { verificarToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/chat/mensaje', verificarToken, enviarMensaje);
+router.post('/chat/mensaje', enviarMensaje);
 router.get('/chat/conversaciones', verificarToken, misConversaciones);
 router.get('/chat/conversaciones/:id/mensajes', verificarToken, mensajesDeConversacion);
 router.delete('/chat/conversaciones/:id', verificarToken, borrarConversacion);
