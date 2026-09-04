@@ -1,11 +1,9 @@
 //Importamos la conexion a la base de datos
 import { supabase } from "../config/supabase.js";
 
-
-// crear el usuario
-export const crearUsuario = async (nombre, email, password, telefono, rol, codigoVerificacion,
-    codigoVerificacionExpiracion) => {
-    const { data, error } = await supabase
+//obtener  todos los usuarios
+export const crearUsuario=async (nombre,email,password, telefono, rol,codigoVerificacion)=>{
+        const {data,error}=await supabase
         .from('usuarios')
         .insert({ nombre, email, password, telefono, rol, isVerified: false, codigoVerificacion, codigoVerificacionExpiracion })
         .select('id,nombre,email,rol')
