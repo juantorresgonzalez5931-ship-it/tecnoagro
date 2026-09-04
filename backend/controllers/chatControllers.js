@@ -1,3 +1,4 @@
+import Groq from 'groq-sdk';
 import {
     crearConversacion,
     obtenerConversacionesPorUsuario,
@@ -7,42 +8,37 @@ import {
     obtenerMensajesPorConversacion
 } from '../models/chatModel.js';
 
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+const GROQ_MODEL = 'openai/gpt-oss-20b';
+
 const SYSTEM_PROMPT = `Eres un asistente experto en agricultura para TecnoAgro. 
 Ayudas a los usuarios con dudas sobre cultivos, plagas, enfermedades y productos agrícolas.
 Responde de forma clara, breve y práctica.`;
 
-const GEMINI_MODEL = 'gemini-3.6-flash';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
-
-// Llama a la API de Gemini con el historial de la conversación
+// Llama a la API de Groq con el historial de la conversación
 const llamarIA = async (historialMensajes) => {
-    
-    const contents = historialMensajes.map(m => ({
-        role: m.sender === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-    }));
 
-    const response = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            system_instruction: {
-                parts: [{ text: SYSTEM_PROMPT }]
-            },
-            contents
-        })
+    // Groq usa el formato estilo OpenAI: role "system" | "user" | "assistant"
+    const messages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...historialMensajes.map(m => ({
+            role: m.sender === 'assistant' ? 'assistant' : 'user',
+            content: m.content
+        }))
+    ];
+
+    const completion = await groq.chat.completions.create({
+        model: GROQ_MODEL,
+        messages,
+        temperature: 0.3,
+        max_tokens: 500
     });
 
-    if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Error de la API de Gemini: ${response.status} - ${errorBody}`);
-    }
-
-    const data = await response.json();
-    const respuesta = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const respuesta = completion.choices[0]?.message?.content;
 
     if (!respuesta) {
-        throw new Error('Gemini no devolvió una respuesta válida');
+        throw new Error('Groq no devolvió una respuesta válida');
     }
 
     return respuesta;
@@ -76,7 +72,7 @@ export const enviarMensaje = async (req, res) => {
             return res.status(500).json({ error: 'Error al obtener el historial' });
         }
 
-        // Llamar a Gemini
+        // Llamar a Groq
         const respuestaIA = await llamarIA(historial);
 
         // Guardar la respuesta de la IA
