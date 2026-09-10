@@ -1,12 +1,13 @@
 import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import { conectaDB, supabase } from './config/supabase.js';
 import authRoutes from './routes/auth.js';
 import pedidoRoutes from './routes/pedido.js';
 import productoRoutes from './routes/producto.js';
 import userRoutes from './routes/user.js';
-import enfermedadRoutes from './routes/enfermedad.js'; // 👈 NUEVO
-import chatRoutes from './routes/chat.js'; // 👈 NUEVO
+import enfermedadRoutes from './routes/enfermedad.js'; 
+import chatRoutes from './routes/chat.js'; 
 
 // CARGAR VARIABLES
 dotenv.config();
@@ -39,6 +40,8 @@ app.use('/api', pedidoRoutes);
 app.use('/api', enfermedadRoutes);
 // RUTA DE CHAT IA 
 app.use('/api', chatRoutes);
+// Montaje de rutas públicas de autenticación
+app.use("/api/auth", authRoutes);
 
 // Manejador de errores 
 app.use((err, req, res, next) => {

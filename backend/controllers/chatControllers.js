@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import { supabase } from '../config/supabase.js';
 import {
     crearConversacion,
     obtenerConversacionesPorUsuario,
@@ -12,16 +13,40 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 
-const SYSTEM_PROMPT = `Eres un asistente experto en agricultura para TecnoAgro. 
-Ayudas a los usuarios con dudas sobre cultivos, plagas, enfermedades y productos agrícolas.
-Responde de forma clara, breve y práctica.`;
+// Arma el system prompt con el catálogo actual desde Supabase
+const construirSystemPrompt = async () => {
+    const { data: productos, error } = await supabase
+        .from('helados')
+        .select('nombre, descripcion, precio');
 
-// Llama a la API de Groq con el historial de la conversación
+    if (error) {
+        console.error('Error al consultar el catálogo:', error.message);
+    }
+
+    const catalogoTexto = productos && productos.length > 0
+        ? productos.map(p =>
+            `- **${p.nombre}**: $${Number(p.precio).toLocaleString('es-CO')} COP | Descripción: ${p.descripcion}`
+          ).join('\n')
+        : 'No hay productos registrados en este momento.';
+
+    return `Eres el asesor virtual de TecnoAgro.
+Eres alegre, amable, coherente y educado.
+
+CATÁLOGO ACTUAL:
+${catalogoTexto}
+
+REGLAS DE ATENCIÓN:
+1. Si el cliente solo saluda, responde con cortesía sin dar precios ni catálogo completo.
+2. Da precios y detalles ÚNICAMENTE cuando el cliente pregunta explícitamente por ellos.
+3. Especifica los valores siempre en pesos colombianos ($ COP).
+4. Sé conciso y completa tus oraciones.`;
+};
+
 const llamarIA = async (historialMensajes) => {
+    const systemPrompt = await construirSystemPrompt();
 
-    // Groq usa el formato estilo OpenAI: role "system" | "user" | "assistant"
     const messages = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         ...historialMensajes.map(m => ({
             role: m.sender === 'assistant' ? 'assistant' : 'user',
             content: m.content
@@ -53,7 +78,6 @@ export const enviarMensaje = async (req, res) => {
             return res.status(400).json({ error: 'usuario_id y mensaje son requeridos' });
         }
 
-        // 1. Obtener o crear la conversación
         let conversacionId = conversation_id;
         if (!conversacionId) {
             const { data: nuevaConv, error: errorConv } = await crearConversacion(usuario_id);
@@ -63,19 +87,15 @@ export const enviarMensaje = async (req, res) => {
             conversacionId = nuevaConv[0].id;
         }
 
-        // Guardar el mensaje del usuario (columna real: sender)
         await crearMensaje(conversacionId, 'user', mensaje);
 
-        // Traer el historial completo para dar contexto a la IA
         const { data: historial, error: errorHistorial } = await obtenerMensajesPorConversacion(conversacionId);
         if (errorHistorial) {
             return res.status(500).json({ error: 'Error al obtener el historial' });
         }
 
-        // Llamar a Groq
         const respuestaIA = await llamarIA(historial);
 
-        // Guardar la respuesta de la IA
         await crearMensaje(conversacionId, 'assistant', respuestaIA);
 
         return res.status(200).json({
