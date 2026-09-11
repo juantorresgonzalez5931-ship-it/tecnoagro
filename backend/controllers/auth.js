@@ -38,11 +38,11 @@ export const registro = async (req, res) => {
         const resultadoEnvio = await enviarCodigoVerificacion(email, nombre, codigoVerificacion);
 
         const usuarioRespuesta = {
-            id: nuevoUsuario[0].id,
-            nombre: nuevoUsuario[0].nombre,
-            email: nuevoUsuario[0].email,
-            rol: nuevoUsuario[0].rol
-        };
+            id: nuevoUsuario.id,
+            nombre: nuevoUsuario.nombre,
+            email: nuevoUsuario.email,
+            rol: nuevoUsuario.rol
+};
 
         // Si Brevo fallo, el usuario ya quedo creado, pero avisamos que el correo no llego
         if (!resultadoEnvio.exito) {
