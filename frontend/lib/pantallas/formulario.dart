@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/user_models.dart';
-import '../services/user_service.dart';
-
+import '/models/user_models.dart';
+import '../service/services/user_service.dart';
 class Formulario extends StatefulWidget {
   const Formulario({super.key});
 

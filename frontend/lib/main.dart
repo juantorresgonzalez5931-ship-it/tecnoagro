@@ -1,20 +1,28 @@
-// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'core/colores.dart';
+import 'pantallas/bienvenido.dart';
 
-// void main() {
-//   runApp(const MainApp());
-// }
+void main() {
+  runApp(const TecnoAgroApp());
+}
 
-// class MainApp extends StatelessWidget {
-//   const MainApp({super.key});
+class TecnoAgroApp extends StatelessWidget {
+  const TecnoAgroApp({super.key});
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return const MaterialApp(
-//       home: Scaffold(
-//         body: Center(
-//           child: Text('Hello World!'),
-//         ),
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'TecnoAgro',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.fondoCrema,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.verdePrimario,
+          primary: AppColors.verdePrimario,
+        ),
+      ),
+      home: const BienvenidoScreen(),
+    );
+  }
+}
