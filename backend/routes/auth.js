@@ -1,7 +1,8 @@
 import express, { Router } from "express";
-import {registro, login} from "../controllers/auth.js";
+import {registro, login, verificarCuenta} from "../controllers/auth.js";
 import { forgotPassword, verifyCode } from "../controllers/recuperar.js";
 import { autenticarConGoogle } from "../controllers/googleAuth.controller.js";
+
 
 const router = express.Router();
 
@@ -15,5 +16,8 @@ router.post('/verify-code', verifyCode);
 
 // Endpoint: POST /api/auth/google
 router.post("/google", autenticarConGoogle);
+
+//verificar cuenta
+router.post('/verificar-cuenta', verificarCuenta);
 
 export default router;

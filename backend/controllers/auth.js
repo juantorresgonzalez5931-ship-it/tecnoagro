@@ -4,6 +4,7 @@ import { supabase } from '../config/supabase.js';
 import { crearUsuario, obtenerPorEmail } from '../models/user.js';
 import { enviarCodigoVerificacion } from '../services/emailService.js';
 
+
 export const registro = async (req, res) => {
     try {
         const { nombre, email, password, telefono, } = req.body;
