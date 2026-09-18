@@ -11,7 +11,6 @@ class BienvenidoScreen extends StatelessWidget {
       backgroundColor: AppColors.fondoCrema,
       body: Column(
         children: [
-          // Bloque verde a todo lo ancho, pegado arriba, ocupando la mitad
           Expanded(
             flex: 1,
             child: Container(
@@ -43,8 +42,6 @@ class BienvenidoScreen extends StatelessWidget {
               ),
             ),
           ),
-
-          // Contenido inferior
           Expanded(
             flex: 1,
             child: SafeArea(
@@ -54,13 +51,23 @@ class BienvenidoScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Bienvenido a\nTecnoAgro',
-                      style: TextStyle(
-                        color: AppColors.verdeTexto,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        height: 1.15,
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          AppColors.verdeClaro,
+                          AppColors.verdeOscuro,
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ).createShader(bounds),
+                      child: const Text(
+                        'Bienvenido a\nTecnoAgro',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          height: 1.15,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -116,7 +123,6 @@ class BienvenidoScreen extends StatelessWidget {
   }
 }
 
-/// Logo reutilizable con la imagen de assets (usado en bienvenido y login).
 class LogoTecnoAgro extends StatelessWidget {
   final double size;
   const LogoTecnoAgro({super.key, this.size = 70});
