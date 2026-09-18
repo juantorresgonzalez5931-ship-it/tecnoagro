@@ -9,53 +9,46 @@ class BienvenidoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fondoCrema,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Etiqueta superior "PRIMERA VEZ"
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  'PRIMERA VEZ',
-                  style: TextStyle(
-                    color: AppColors.textoSecundario,
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.w500,
+      body: Column(
+        children: [
+          // Bloque verde a todo lo ancho, pegado arriba, ocupando la mitad
+          Expanded(
+            flex: 1,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: AppColors.gradienteBienvenida,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.verdeOscuro.withOpacity(0.25),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Image.asset(
+                    'assets/images/logo-tecnoagro.png',
+                    width: 140,
+                    height: 140,
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+          ),
 
-            // Bloque verde con el logo
-            Expanded(
-              flex: 5,
-              child: Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  gradient: AppColors.gradienteBienvenida,
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.verdeOscuro.withOpacity(0.25),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: _LogoTecnoAgro(size: 90),
-                ),
-              ),
-            ),
-
-            // Contenido inferior
-            Expanded(
-              flex: 4,
+          // Contenido inferior
+          Expanded(
+            flex: 1,
+            child: SafeArea(
+              top: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(28, 28, 28, 20),
                 child: Column(
@@ -116,86 +109,25 @@ class BienvenidoScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Logo reutilizable (sol + colinas) usado en bienvenido y login.
-class _LogoTecnoAgro extends StatelessWidget {
-  final double size;
-  const _LogoTecnoAgro({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _LogoPainter(),
-      ),
-    );
-  }
-}
-
-class _LogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height * 0.42);
-    final radius = size.width * 0.28;
-
-    // Sol
-    final solPaint = Paint()..color = AppColors.naranjaSol;
-    canvas.drawCircle(center, radius, solPaint);
-
-    // Rayos del sol (triángulo blanco simple simulando destello)
-    final rayoPaint = Paint()..color = Colors.white.withOpacity(0.9);
-    final path = Path()
-      ..moveTo(center.dx, center.dy - radius * 1.4)
-      ..lineTo(center.dx - radius * 0.5, center.dy + radius * 0.1)
-      ..lineTo(center.dx + radius * 0.5, center.dy + radius * 0.1)
-      ..close();
-    canvas.drawPath(path, rayoPaint);
-
-    // Colinas verdes (dos curvas)
-    final colinaPaint1 = Paint()..color = const Color(0xFF2E7D32);
-    final colinaPath1 = Path()
-      ..moveTo(0, size.height * 0.72)
-      ..quadraticBezierTo(
-        size.width * 0.5, size.height * 0.55,
-        size.width, size.height * 0.72,
-      )
-      ..lineTo(size.width, size.height * 0.82)
-      ..quadraticBezierTo(
-        size.width * 0.5, size.height * 0.65,
-        0, size.height * 0.82,
-      )
-      ..close();
-    canvas.drawPath(colinaPath1, colinaPaint1);
-
-    final colinaPaint2 = Paint()..color = const Color(0xFF4CAF50);
-    final colinaPath2 = Path()
-      ..moveTo(0, size.height * 0.88)
-      ..quadraticBezierTo(
-        size.width * 0.5, size.height * 0.72,
-        size.width, size.height * 0.88,
-      )
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(colinaPath2, colinaPaint2);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
+/// Logo reutilizable con la imagen de assets (usado en bienvenido y login).
 class LogoTecnoAgro extends StatelessWidget {
   final double size;
   const LogoTecnoAgro({super.key, this.size = 70});
 
   @override
-  Widget build(BuildContext context) => _LogoTecnoAgro(size: size);
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/images/logo-tecnoagro.png',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+    );
+  }
 }
