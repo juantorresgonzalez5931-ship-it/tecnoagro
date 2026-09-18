@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '/service/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/user_service.dart';
-import '../models/user_models.dart';
-import '../pages/home.dart';
-import '../componets/formulario.dart';
+import '/models/user_models.dart';
+import '/pages/home.dart';
+import '/pantallas/formulario.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

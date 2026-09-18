@@ -22,7 +22,7 @@ export const obtenerPorCategoria = async (categoria) => {
   const { data, error } = await supabase
     .from('productos')
     .select('*')
-    .eq('categorias', categoria);
+    .eq('categoria', categoria);
   return { data, error };
 };
 

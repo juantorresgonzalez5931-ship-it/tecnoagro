@@ -21,7 +21,7 @@ export const registro = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const rolPorDefecto = "usuario";
 
-        // Generar codigo de 6 digitos y fecha de expiracion (15 minutos)
+        // Generar codigoo de 6 digitos y fecha de expirasion 15 minutos
         const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
         const codigoVerificacionExpiracion = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
@@ -35,7 +35,7 @@ export const registro = async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        // Enviar el correo con el codigo de 6 digitos usando Brevo
+        // Envia el correo con el codigo de 6 digitos usando Brevo
         const resultadoEnvio = await enviarCodigoVerificacion(email, nombre, codigoVerificacion);
 
         const usuarioRespuesta = {
