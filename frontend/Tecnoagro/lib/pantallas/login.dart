@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/app_text_field.dart';
 import '/service/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/models/user_models.dart';
@@ -7,7 +8,6 @@ import '/pages/home.dart';
 import '/pantallas/formulario.dart';
 import '/pantallas/bienvenido.dart';
 import '/core/colores.dart';
-import '/widgets/app_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 18),
               AppTextField(
                 label: 'Contrasena',
-                hint: '••••••••',
+                hint: '',
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(

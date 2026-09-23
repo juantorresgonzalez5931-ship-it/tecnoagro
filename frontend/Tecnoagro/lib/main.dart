@@ -16,6 +16,7 @@ class TecnoAgroApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: 'GoogleSansFlex',
         scaffoldBackgroundColor: AppColors.fondoCrema,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.verdePrimario,
