@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pantallas/splashscreen.dart';
 import 'core/colores.dart';
 import 'pantallas/bienvenido.dart';
 
@@ -23,7 +24,7 @@ class TecnoAgroApp extends StatelessWidget {
           primary: AppColors.verdePrimario,
         ),
       ),
-      home: const BienvenidoScreen(),
+      home: const Splashscreen(),
     );
   }
 }
