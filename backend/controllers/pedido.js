@@ -2,6 +2,8 @@ import { crearPedido, obtenerPedidoConDetalles, obtenerPedidosPorUsuario, actual
 import { obtenerPorId } from '../models/user.js';
 import { enviarConfirmacionPedido } from '../utils/sendEmail.js';
 
+
+
 export const crearPedidoConDetalles = async (req, res) => {
     try {
         const { usuario_id, direccion_retiro, telefono, detalles } = req.body;

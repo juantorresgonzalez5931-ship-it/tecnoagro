@@ -5,7 +5,7 @@ import 'api_config.dart';
 
 class UserService {
   Future<UserModels> registrarUsuario(UserModels usuario) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/register');
+    final url = Uri.parse('${ApiConfig.authBaseUrl}/register');
 
     try {
       final response = await http.post(
@@ -49,12 +49,12 @@ class UserService {
     }
   }
 
-  // Peticion POST para iniciar sesion (NUEVO, dentro de la misma clase)
+  // Peticion POST para iniciar sesion
   Future<Map<String, dynamic>> loginUsuario(
     String email,
     String password,
   ) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}/login');
+    final url = Uri.parse('${ApiConfig.authBaseUrl}/login');
 
     try {
       final response = await http.post(
@@ -67,12 +67,10 @@ class UserService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        // Devuelve el mapa completo con 'token' y 'usuario' tal como responde el backend
         return responseData;
       } else {
         if (contentType.contains('application/json')) {
           final Map<String, dynamic> errorData = jsonDecode(response.body);
-          // El backend Express envia el mensaje en la clave 'error'
           final String mensajeError =
               errorData['error'] ??
               errorData['message'] ??
