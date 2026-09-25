@@ -27,11 +27,28 @@ class _SplashscreenState extends State<Splashscreen> {
     return Scaffold(
       backgroundColor: AppColors.fondoCrema,
       body: Center(
-        child: Image.asset(
-          "assets/images/logo-tecnoagro.png",
-          width: 200,
-          height: 200,
-          fit: BoxFit.contain,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              "assets/images/logo-tecnoagro.png",
+              width: 200,
+              height: 200,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 32),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 60),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  color: AppColors.verdePrimario,
+                  backgroundColor: AppColors.verdePrimario.withOpacity(0.2),
+                  minHeight: 6,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
