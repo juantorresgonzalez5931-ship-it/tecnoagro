@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/colores.dart';
 import '/models/user_models.dart';
 import '../service/services/user_service.dart';
 class Formulario extends StatefulWidget {
@@ -97,7 +98,7 @@ class _FormularioState extends State<Formulario> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0x000A0A0A),
+        backgroundColor: AppColors.fondoCrema,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -112,15 +113,28 @@ class _FormularioState extends State<Formulario> {
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
+
+              Center(child: Image.asset("assets/images/logo-tecnoagro.png", height: 150, width: 150,)),
               Text(""),
               Text(""),
-              Text(
-                "Registro de Usuario",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20),
+              ShaderMask(
+                shaderCallback: (b) => LinearGradient(
+                  colors: [AppColors.verdeClaro, AppColors.verdeOscuro],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ).createShader(b),
+                child: Center(
+                  child: const Text('Registrate',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold)),
+                ),
               ),
+
+              
 
               SizedBox(height: 30),
               Text("   Nombres"),

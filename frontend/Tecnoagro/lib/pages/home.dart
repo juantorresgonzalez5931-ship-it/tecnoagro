@@ -57,7 +57,7 @@ Future<void> _cerrarSesion() async {
       ),
       body: Center(
         child: Text(
-          'Bienvenido, $_nombre',
+          'Bienvenid@, $_nombre',
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
