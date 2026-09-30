@@ -28,7 +28,7 @@ export const enviarCodigoVerificacion = async (emailDestino, nombreDestino, codi
           <p style="color: #555555; font-size: 15px;">Gracias por unirte a Tecnoagro. Usa el siguiente codigo de verificacion de 6 digitos para activar tu cuenta. Este codigo vencera en <strong>15 minutos</strong>:</p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #121212; background: #fdf2f4; padding: 12px 24px; border-radius: 8px; border: 1px dashed #d81b60; display: inline-block;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #121212; background: #fdf2f4; padding: 12px 24px; border-radius: 8px; border: 1px dashed #00f435; display: inline-block;">
               ${codigo}
             </span>
           </div>
