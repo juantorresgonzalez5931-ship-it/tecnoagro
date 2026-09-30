@@ -78,10 +78,16 @@ class _RecuperarScreenState extends State<RecuperarScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: ConstrainedBox(
+              // Ocupa al menos toda la altura disponible para poder centrar.
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
                 child: Image.asset('assets/images/logo-tecnoagro.png',
@@ -162,8 +168,12 @@ class _RecuperarScreenState extends State<RecuperarScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              // Espacio extra abajo: sube un poco todo el contenido.
+              const SizedBox(height: 60),
             ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
