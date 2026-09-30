@@ -7,6 +7,11 @@ class AppTextField extends StatelessWidget {
   final TextEditingController controller;
   final bool obscureText;
   final Widget? suffixIcon;
+  // Nuevos parámetros opcionales: no afectan las pantallas que ya usan el campo.
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
+  final bool enabled;
 
   const AppTextField({
     super.key,
@@ -15,6 +20,10 @@ class AppTextField extends StatelessWidget {
     required this.controller,
     this.obscureText = false,
     this.suffixIcon,
+    this.keyboardType,
+    this.textInputAction,
+    this.onSubmitted,
+    this.enabled = true,
   });
 
   @override
@@ -31,6 +40,10 @@ class AppTextField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: obscureText,
+          enabled: enabled,
+          keyboardType: keyboardType,
+          textInputAction: textInputAction,
+          onSubmitted: onSubmitted,
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
@@ -39,6 +52,7 @@ class AppTextField extends StatelessWidget {
             suffixIcon: suffixIcon,
             border: border,
             enabledBorder: border,
+            disabledBorder: border,
             focusedBorder: border.copyWith(borderSide: BorderSide(color: AppColors.verdePrimario, width: 1.5)),
           ),
         ),

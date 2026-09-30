@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pantallas/recuperar.dart';
 import 'package:frontend/widgets/app_text_field.dart';
 import '/service/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -136,7 +137,10 @@ class _LoginScreenState extends State<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {}, 
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RecuperarScreen())
+                  ), 
                   style: TextButton.styleFrom(foregroundColor: AppColors.verdePrimario, padding: EdgeInsets.zero),
                   child: const Text('¿Olvidaste tu contrasena?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 ),
