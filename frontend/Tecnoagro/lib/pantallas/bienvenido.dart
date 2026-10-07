@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/colores.dart';
-import 'login.dart';
+import '../pages/home.dart';
 
 class BienvenidoScreen extends StatelessWidget {
   const BienvenidoScreen({super.key});
@@ -90,7 +90,7 @@ class BienvenidoScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
+                              builder: (_) => const HomeScreen(),
                             ),
                           );
                         },
