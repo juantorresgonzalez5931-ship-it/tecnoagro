@@ -43,9 +43,11 @@ class _LoginScreenState extends State<LoginScreen> {
       final respuesta = await _userService.loginUsuario(email, password);
       final String token = respuesta['token'];
       final usuario = UserModels.fromJson(respuesta['usuario']);
+      final String rol = respuesta['usuario']['rol'] ?? 'usuario';
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', token);
       await prefs.setString('user_name', usuario.nombre ?? 'Usuario');
+      await prefs.setString('user_rol', rol); // ← nueva
       if (!mounted) return;
       _mostrarMensaje('!Bienvenido, ${usuario.nombre}!');
       Navigator.pushReplacement(

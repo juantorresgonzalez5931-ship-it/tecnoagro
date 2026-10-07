@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/models/producto_models.dart';
 import 'package:frontend/pantallas/login.dart';
+import 'package:frontend/productos_admin/productos_screen.dart';
 import 'package:frontend/widgets/banner_producto.dart';
 import 'package:frontend/service/services/producto_service.dart';
 import 'package:frontend/widgets/perfil_sheet.dart';
@@ -69,7 +70,19 @@ class _HomeScreenState extends State<HomeScreen> {
     mostrarPerfil(context, prefs.getString('user_name') ?? 'Usuario', () async {
       await prefs.remove('jwt_token');
       await prefs.remove('user_name');
+      await prefs.remove('user_rol');
       if (mounted) setState(() => _nombre = null);
+    });
+  }
+
+  /// Abre la lista de productos (con botón "Crear producto" si es admin).
+  /// Al volver, recarga el banner y "Más Buscados".
+  void _irAProductos() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProductosScreen()),
+    ).then((_) {
+      if (mounted) _cargarProductos();
     });
   }
 
@@ -95,12 +108,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _titulo(String texto) => Text(texto, style: _estilo(18));
 
-  Widget _canal(IconData icono, String texto) => Expanded(
+  Widget _canal(IconData icono, String texto, [VoidCallback? onTap]) => Expanded(
         child: Container(
           decoration: _tarjeta,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () => _proximamente(texto),
+            onTap: onTap ?? () => _proximamente(texto),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 6),
               child: Column(children: [
@@ -149,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _titulo('Nuestros Canales'),
             const SizedBox(height: 14),
             Row(children: [
-              _canal(Icons.shopping_bag_outlined, 'Productos'),
+              _canal(Icons.shopping_bag_outlined, 'Productos', _irAProductos),
               const SizedBox(width: 12),
               _canal(Icons.eco_outlined, 'Enfermedades'),
               const SizedBox(width: 12),
@@ -159,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               _titulo('Más Buscados'),
               GestureDetector(
-                onTap: () => _proximamente('El catálogo'),
+                onTap: _irAProductos,
                 child: Text('Ver todo', style: _estilo(13, color: AppColors.verdeTexto)),
               ),
             ]),
@@ -187,7 +200,15 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedFontSize: 12,
           unselectedFontSize: 12,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          onTap: (i) => i == 3 ? _abrirPerfil() : (i == 0 ? null : _proximamente(tabs[i].$3)),
+          onTap: (i) {
+            if (i == 3) {
+              _abrirPerfil();
+            } else if (i == 1) {
+              _irAProductos();
+            } else if (i != 0) {
+              _proximamente(tabs[i].$3);
+            }
+          },
           items: [for (final t in tabs) BottomNavigationBarItem(icon: Icon(t.$1), activeIcon: Icon(t.$2), label: t.$3)],
         ),
       ),
