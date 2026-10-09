@@ -8,6 +8,7 @@ import 'package:frontend/service/services/producto_service.dart';
 import 'package:frontend/widgets/perfil_sheet.dart';
 import 'package:frontend/widgets/producto_tile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/core/navegacion.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -77,14 +78,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Abre la lista de productos (con botón "Crear producto" si es admin).
   /// Al volver, recarga el banner y "Más Buscados".
-  void _irAProductos() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ProductosScreen()),
-    ).then((_) {
-      if (mounted) _cargarProductos();
-    });
-  }
+Future<void> _irAProductos() async {
+  await abrirCatalogo(context);
+  if (!mounted) return;
+  _cargarProductos();
+}
+
 
   void _proximamente(String seccion) {
     ScaffoldMessenger.of(context)

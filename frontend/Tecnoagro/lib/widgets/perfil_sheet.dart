@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
+import 'package:frontend/pantallas/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Mi Perfil: sin sesión abre el login; con sesión muestra el panel del perfil.
+/// [alCerrarSesion] se ejecuta después de borrar la sesión (por ejemplo, para refrescar el inicio).
+Future<void> abrirPerfil(BuildContext context, {VoidCallback? alCerrarSesion}) async {
+  final prefs = await SharedPreferences.getInstance();
+  if (!context.mounted) return;
+  if ((prefs.getString('jwt_token') ?? '').isEmpty) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    return;
+  }
+  mostrarPerfil(context, prefs.getString('user_name') ?? 'Usuario', () async {
+    await prefs.remove('jwt_token');
+    await prefs.remove('user_name');
+    alCerrarSesion?.call();
+  });
+}
 
 /// Panel de "Mi Perfil" para el usuario con sesión iniciada.
-/// [onCerrarSesion] borra los datos guardados y refresca el home.
+/// [onCerrarSesion] borra los datos guardados y refresca la pantalla.
 void mostrarPerfil(BuildContext context, String nombre, Future<void> Function() onCerrarSesion) {
   showModalBottomSheet(
     context: context,
