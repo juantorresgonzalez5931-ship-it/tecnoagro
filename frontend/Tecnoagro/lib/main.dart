@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pantallas/splashscreen.dart';
+import 'package:frontend/productos_admin/crear_producto.dart';
+import 'package:frontend/productos_admin/productos_screen.dart' show ProductosAdminScreen;
 import 'core/colores.dart';
 import 'pantallas/bienvenido.dart';
 
@@ -36,7 +38,7 @@ class TecnoAgroApp extends StatelessWidget {
           labelSmall: TextStyle(fontWeight: FontWeight.w500),
         ),
       ),
-      home: const Splashscreen(),
+      home: const ProductosAdminScreen(),
     );
   }
 }
