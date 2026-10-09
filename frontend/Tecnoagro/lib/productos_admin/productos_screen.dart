@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
+import 'package:frontend/core/tema.dart';
 import 'package:frontend/productos_admin/crear_producto.dart';
 import 'package:frontend/widgets/barra_navegacion.dart';
 import 'package:frontend/widgets/catalogo_productos.dart';
@@ -16,7 +17,6 @@ class ProductosAdminScreen extends StatefulWidget {
 class _ProductosAdminScreenState extends State<ProductosAdminScreen> {
   final _catalogo = GlobalKey<CatalogoProductosState>();
 
-  /// Abre el formulario y, si se creó un producto, refresca la lista.
   Future<void> _anadirProducto() async {
     final creado = await Navigator.push<bool>(
       context,
@@ -37,16 +37,11 @@ class _ProductosAdminScreenState extends State<ProductosAdminScreen> {
               key: _catalogo,
               accionExtra: SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: AppRadius.botonAlto,
                 child: ElevatedButton.icon(
                   onPressed: _anadirProducto,
                   icon: const Icon(Icons.add),
-                  label: const Text('Añadir producto', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.verdePrimario,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                  ),
+                  label: const Text('Añadir producto'),
                 ),
               ),
             ),

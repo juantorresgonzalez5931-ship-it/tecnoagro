@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pantallas/splashscreen.dart';
 import 'core/colores.dart';
+import 'core/tema.dart';
 import 'pantallas/bienvenido.dart';
 
 void main() {
@@ -23,6 +24,11 @@ class TecnoAgroApp extends StatelessWidget {
           seedColor: AppColors.verdePrimario,
           primary: AppColors.verdePrimario,
         ),
+        // Estilo global de botones (se edita en core/tema.dart)
+        elevatedButtonTheme: AppButtonThemes.elevated,
+        filledButtonTheme: AppButtonThemes.filled,
+        outlinedButtonTheme: AppButtonThemes.outlined,
+        textButtonTheme: AppButtonThemes.text,
         // Ajuste global del grosor de la letra
         textTheme: const TextTheme(
           bodyLarge: TextStyle(fontWeight: FontWeight.w500),

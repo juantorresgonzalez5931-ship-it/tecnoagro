@@ -78,12 +78,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Abre la lista de productos (con botón "Crear producto" si es admin).
   /// Al volver, recarga el banner y "Más Buscados".
-Future<void> _irAProductos() async {
-  await abrirCatalogo(context);
-  if (!mounted) return;
-  _cargarProductos();
-}
-
+  Future<void> _irAProductos() async {
+    await abrirCatalogo(context);
+    if (!mounted) return;
+    _cargarProductos();
+  }
 
   void _proximamente(String seccion) {
     ScaffoldMessenger.of(context)
@@ -126,6 +125,23 @@ Future<void> _irAProductos() async {
         ),
       );
 
+  /// Barra superior fija: buscar, logo y notificaciones. No se mueve con el scroll.
+  Widget _barraSuperior() => Container(
+        color: AppColors.fondoCrema,
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+        child: Row(children: [
+          _circulo(Icons.search, () => _proximamente('La búsqueda')),
+          Expanded(
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Image.asset('assets/images/logo-tecnoagro.png', width: 40, height: 40),
+              const SizedBox(width: 10),
+              Text('TecnoAgro', style: _estilo(22, color: AppColors.verdeOscuro)),
+            ]),
+          ),
+          _circulo(Icons.notifications_none, () => _proximamente('Las notificaciones')),
+        ]),
+      );
+
   @override
   Widget build(BuildContext context) {
     const tabs = [
@@ -137,55 +153,48 @@ Future<void> _irAProductos() async {
     return Scaffold(
       backgroundColor: AppColors.fondoCrema,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [
-              _circulo(Icons.search, () => _proximamente('La búsqueda')),
-              Expanded(
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Image.asset('assets/images/logo-tecnoagro.png', width: 40, height: 40),
-                  const SizedBox(width: 10),
-                  Text('TecnoAgro', style: _estilo(22, color: AppColors.verdeOscuro)),
+        child: Column(children: [
+          _barraSuperior(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text(_nombre == null ? 'Hola 👋' : 'Hola, $_nombre 👋', style: _estilo(26)),
+                Text('¿Qué necesitas hoy?',
+                    style: _estilo(16, color: AppColors.textoSecundario, peso: FontWeight.normal)),
+                const SizedBox(height: 20),
+                BannerNuevoProducto(producto: _productos.isEmpty ? null : _productos.first),
+                const SizedBox(height: 26),
+                _titulo('Nuestros Canales'),
+                const SizedBox(height: 14),
+                Row(children: [
+                  _canal(Icons.shopping_bag_outlined, 'Productos', _irAProductos),
+                  const SizedBox(width: 12),
+                  _canal(Icons.eco_outlined, 'Enfermedades'),
+                  const SizedBox(width: 12),
+                  _canal(Icons.chat_bubble_outline, 'ChatBot IA'),
                 ]),
-              ),
-              _circulo(Icons.notifications_none, () => _proximamente('Las notificaciones')),
-            ]),
-            const SizedBox(height: 24),
-            Text(_nombre == null ? 'Hola 👋' : 'Hola, $_nombre 👋', style: _estilo(26)),
-            Text('¿Qué necesitas hoy?',
-                style: _estilo(16, color: AppColors.textoSecundario, peso: FontWeight.normal)),
-            const SizedBox(height: 20),
-            BannerNuevoProducto(producto: _productos.isEmpty ? null : _productos.first),
-            const SizedBox(height: 26),
-            _titulo('Nuestros Canales'),
-            const SizedBox(height: 14),
-            Row(children: [
-              _canal(Icons.shopping_bag_outlined, 'Productos', _irAProductos),
-              const SizedBox(width: 12),
-              _canal(Icons.eco_outlined, 'Enfermedades'),
-              const SizedBox(width: 12),
-              _canal(Icons.chat_bubble_outline, 'ChatBot IA'),
-            ]),
-            const SizedBox(height: 28),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              _titulo('Más Buscados'),
-              GestureDetector(
-                onTap: _irAProductos,
-                child: Text('Ver todo', style: _estilo(13, color: AppColors.verdeTexto)),
-              ),
-            ]),
-            const SizedBox(height: 14),
-            if (_cargando)
-              Center(child: CircularProgressIndicator(color: AppColors.verdePrimario))
-            else if (_error != null)
-              TextButton(onPressed: _cargarProductos, child: Text('$_error. Toca para reintentar'))
-            else if (_productos.isEmpty)
-              Text('Aún no hay productos', style: _estilo(14, color: AppColors.textoSecundario))
-            else
-              for (final p in _productos.take(3)) ProductoTile(producto: p),
-          ]),
-        ),
+                const SizedBox(height: 28),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  _titulo('Más Buscados'),
+                  GestureDetector(
+                    onTap: _irAProductos,
+                    child: Text('Ver todo', style: _estilo(13, color: AppColors.verdeTexto)),
+                  ),
+                ]),
+                const SizedBox(height: 14),
+                if (_cargando)
+                  Center(child: CircularProgressIndicator(color: AppColors.verdePrimario))
+                else if (_error != null)
+                  TextButton(onPressed: _cargarProductos, child: Text('$_error. Toca para reintentar'))
+                else if (_productos.isEmpty)
+                  Text('Aún no hay productos', style: _estilo(14, color: AppColors.textoSecundario))
+                else
+                  for (final p in _productos.take(3)) ProductoTile(producto: p),
+              ]),
+            ),
+          ),
+        ]),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.borde))),

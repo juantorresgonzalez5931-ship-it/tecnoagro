@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/widgets/perfil_sheet.dart';
 
-/// Barra inferior compartida por el inicio y el catálogo.
-/// [actual] marca la pestaña activa y [onTap] recibe el índice tocado:
-/// 0 Inicio, 1 Productos, 2 Asesor IA, 3 Mi Perfil.
 class BarraNavegacion extends StatelessWidget {
   final int actual;
   final ValueChanged<int> onTap;
