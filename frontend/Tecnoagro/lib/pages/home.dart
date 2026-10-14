@@ -41,8 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final lista = await _productoService.listarProductos();
       if (mounted) setState(() => _productos = lista);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -67,11 +68,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _cargarNombre() async {
     final prefs = await SharedPreferences.getInstance();
     final nombre = (prefs.getString('user_name') ?? '').trim();
-    if (!mounted ||
-        (prefs.getString('jwt_token') ?? '').isEmpty ||
-        nombre.isEmpty)
-      return;
-    setState(() => _nombre = nombre.split(' ').first);
+    if (!mounted) return;
+    final conSesion = (prefs.getString('jwt_token') ?? '').isNotEmpty && nombre.isNotEmpty;
+    setState(() => _nombre = conSesion ? nombre.split(' ').first : null);
   }
 
   /// Mi Perfil: sin sesión abre el login; con sesión muestra el perfil.
@@ -98,6 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _irAProductos() async {
     await abrirCatalogo(context);
     if (!mounted) return;
+    _cargarNombre();
     _cargarProductos();
   }
 

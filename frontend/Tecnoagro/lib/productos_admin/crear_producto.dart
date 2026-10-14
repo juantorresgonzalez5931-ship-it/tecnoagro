@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
+import 'package:frontend/core/tema.dart';
 import 'package:frontend/service/services/producto_service.dart';
 import 'package:frontend/widgets/app_text_field.dart';
 import 'package:image_picker/image_picker.dart';
@@ -45,19 +46,49 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
       ));
   }
 
-  /// Deja solo los dígitos: "70.000" -> 70000. Devuelve null si no hay número.
   int? _numero(String texto) => int.tryParse(texto.replaceAll(RegExp(r'\D'), ''));
 
-  Future<void> _elegirImagen() async {
-    final foto = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 85);
-    if (foto != null) setState(() => _imagen = foto.path);
+  Future<void> _elegirOrigenImagen() async {
+    final origen = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.boton)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 8),
+          ListTile(
+            leading: Icon(Icons.photo_camera_outlined, color: AppColors.verdePrimario),
+            title: const Text('Tomar foto'),
+            onTap: () => Navigator.pop(context, ImageSource.camera),
+          ),
+          ListTile(
+            leading: Icon(Icons.photo_library_outlined, color: AppColors.verdePrimario),
+            title: const Text('Elegir de la galería'),
+            onTap: () => Navigator.pop(context, ImageSource.gallery),
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+    if (origen != null) await _elegirImagen(origen);
+  }
+
+  Future<void> _elegirImagen(ImageSource origen) async {
+    try {
+      final foto = await ImagePicker().pickImage(source: origen, maxWidth: 1600, imageQuality: 85);
+      if (foto != null) setState(() => _imagen = foto.path);
+    } catch (_) {
+      if (mounted) _aviso('No se pudo abrir la cámara o la galería. Revisa los permisos.', error: true);
+    }
   }
 
   Future<void> _guardar() async {
     final precio = _numero(_precio.text);
     final stock = _numero(_stock.text);
     if (_imagen == null || _nombre.text.trim().isEmpty || _categoria == null || precio == null || precio <= 0) {
-      _aviso('Agrega la foto, el nombre, la categoría y el precio', error: true);
+      _aviso('Faltan datos por completar', error: true);
       return;
     }
     setState(() => _guardando = true);
@@ -84,7 +115,7 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
   }
 
   Widget _selectorImagen() => GestureDetector(
-        onTap: _guardando ? null : _elegirImagen,
+        onTap: _guardando ? null : _elegirOrigenImagen,
         child: Container(
           height: 170,
           clipBehavior: Clip.antiAlias,
@@ -180,18 +211,13 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
             ]),
             const SizedBox(height: 4),
             SizedBox(
-              height: 56,
+              height: AppRadius.botonAlto,
               child: ElevatedButton(
                 onPressed: _guardando ? null : _guardar,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.verdePrimario,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
                 child: _guardando
                     ? const SizedBox(
                         width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('GUARDAR PRODUCTO', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    : const Text('GUARDAR PRODUCTO'),
               ),
             ),
           ]),
