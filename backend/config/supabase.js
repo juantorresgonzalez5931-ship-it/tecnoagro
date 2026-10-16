@@ -1,5 +1,6 @@
 //VARIABLES DE ENTORONO
-import dotenv from 'dotenv/config'; 
+import 'dotenv/config';
+import WebSocket from 'ws';
 import { createClient } from '@supabase/supabase-js';
 
 //CREACION DE LA CONEXION A SUPABASE
@@ -12,9 +13,11 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 //CONEXION A SUPABASE
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { transport: WebSocket },
+});
 
-export const conectaDB=()=>{
+export const conectaDB = () => {
     console.log("✅ Conexion a supabase establecida correctamente");
-}
-
+};

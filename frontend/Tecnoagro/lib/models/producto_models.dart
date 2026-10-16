@@ -4,7 +4,9 @@ class ProductoModels {
   final String nombre;
   final String? descripcion;
   final String? categoria;
+  final String? principioActivo;
   final num precio;
+  final int? stock;
   final String? imagenUrl;
   final DateTime? creadoEn;
 
@@ -14,6 +16,8 @@ class ProductoModels {
     required this.precio,
     this.descripcion,
     this.categoria,
+    this.principioActivo,
+    this.stock,
     this.imagenUrl,
     this.creadoEn,
   });
@@ -24,11 +28,13 @@ class ProductoModels {
       nombre: (json['nombre'] ?? '').toString(),
       descripcion: json['descripcion']?.toString(),
       categoria: json['categoria']?.toString(),
+      principioActivo: json['principio_activo']?.toString(),
       // El precio puede llegar como número o como texto.
       precio: num.tryParse('${json['precio']}') ?? 0,
+      stock: num.tryParse('${json['stock']}')?.toInt(),
       imagenUrl: json['imagen_url']?.toString(),
-      // Solo existe si tu tabla tiene created_at (Supabase la crea por defecto).
-      creadoEn: DateTime.tryParse('${json['created_at'] ?? ''}'),
+      // En tu tabla la columna se llama creado_en.
+      creadoEn: DateTime.tryParse('${json['creado_en'] ?? json['created_at'] ?? ''}'),
     );
   }
 }

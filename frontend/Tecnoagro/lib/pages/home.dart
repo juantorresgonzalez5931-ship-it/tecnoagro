@@ -4,6 +4,7 @@ import 'package:frontend/models/producto_models.dart';
 import 'package:frontend/pantallas/login.dart';
 import 'package:frontend/productos_admin/productos_screen.dart';
 import 'package:frontend/widgets/banner_producto.dart';
+import 'package:frontend/widgets/barra_navegacion.dart';
 import 'package:frontend/service/services/producto_service.dart';
 import 'package:frontend/widgets/perfil_sheet.dart';
 import 'package:frontend/widgets/producto_tile.dart';
@@ -148,12 +149,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const tabs = [
-      (Icons.home_outlined, Icons.home, 'Inicio'),
-      (Icons.shopping_bag_outlined, Icons.shopping_bag, 'Productos'),
-      (Icons.chat_bubble_outline, Icons.chat_bubble, 'Asesor IA'),
-      (Icons.person_outline, Icons.person, 'Mi Perfil'),
-    ];
     return Scaffold(
       backgroundColor: AppColors.fondoCrema,
       body: SafeArea(
@@ -200,29 +195,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ]),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.borde))),
-        child: BottomNavigationBar(
-          currentIndex: 0,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          elevation: 0,
-          selectedItemColor: AppColors.verdePrimario,
-          unselectedItemColor: AppColors.textoSecundario,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          onTap: (i) {
-            if (i == 3) {
-              _abrirPerfil();
-            } else if (i == 1) {
-              _irAProductos();
-            } else if (i != 0) {
-              _proximamente(tabs[i].$3);
-            }
-          },
-          items: [for (final t in tabs) BottomNavigationBarItem(icon: Icon(t.$1), activeIcon: Icon(t.$2), label: t.$3)],
-        ),
+      bottomNavigationBar: BarraNavegacion(
+        actual: 0,
+        onTap: (i) {
+          if (i == 1) {
+            _irAProductos();
+          } else if (i == 2) {
+            _proximamente('Asesor IA');
+          } else if (i == 3) {
+            abrirCarrito(context);
+          } else if (i == 4) {
+            _abrirPerfil();
+          }
+        },
       ),
     );
   }
