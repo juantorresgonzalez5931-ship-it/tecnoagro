@@ -4,6 +4,37 @@ import '/models/user_models.dart';
 import 'api_config.dart';
 
 class UserService {
+  /// Crea una cuenta nueva. Devuelve la respuesta del backend: {message, emailEnviado, usuario}.
+  Future<Map<String, dynamic>> crearCuenta({
+    required String nombre,
+    required String email,
+    required String password,
+    required String telefono,
+    String? fechaNacimiento,
+  }) async {
+    final url = Uri.parse('${ApiConfig.authBaseUrl}/register');
+    try {
+      final response = await http.post(
+        url,
+        headers: ApiConfig.headers,
+        body: jsonEncode({
+          'nombre': nombre,
+          'email': email,
+          'password': password,
+          'telefono': telefono,
+          'fecha_nacimiento': fechaNacimiento, // hoy el backend la ignora
+        }),
+      );
+      final esJson = (response.headers['content-type'] ?? '').contains('application/json');
+      final datos = esJson ? jsonDecode(response.body) as Map<String, dynamic> : <String, dynamic>{};
+
+      if (response.statusCode == 200 || response.statusCode == 201) return datos;
+      throw Exception(datos['error'] ?? datos['message'] ?? 'No se pudo crear la cuenta (código ${response.statusCode})');
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
   Future<UserModels> registrarUsuario(UserModels usuario) async {
     final url = Uri.parse('${ApiConfig.authBaseUrl}/register');
 

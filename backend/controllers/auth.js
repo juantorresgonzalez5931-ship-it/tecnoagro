@@ -2,12 +2,10 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
 import { crearUsuario, obtenerPorEmail } from '../models/user.js';
-import { enviarCodigoVerificacion } from '../services/emailService.js';
-
 
 export const registro = async (req, res) => {
     try {
-        const { nombre, email, password, telefono, } = req.body;
+        const { nombre, email, password, telefono } = req.body;
 
         if (!nombre || !email || !password) {
             return res.status(400).json({ error: "Faltan datos obligatorios" });
@@ -21,13 +19,11 @@ export const registro = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const rolPorDefecto = "usuario";
 
-        // Generar codigoo de 6 digitos y fecha de expirasion 15 minutos
-        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
-        const codigoVerificacionExpiracion = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-
+        // Ya no se genera ni se envía código de verificación al registrarse.
+        // El código solo se usa para recuperar la contraseña (recuperarController).
         const { data: nuevoUsuario, error } = await crearUsuario(
             nombre, email, hashedPassword, telefono, rolPorDefecto,
-            codigoVerificacion, codigoVerificacionExpiracion
+            null, null
         );
 
         if (error) {
@@ -35,29 +31,25 @@ export const registro = async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        // Envia el correo con el codigo de 6 digitos usando Brevo
-        const resultadoEnvio = await enviarCodigoVerificacion(email, nombre, codigoVerificacion);
+        // La cuenta queda activa desde el inicio.
+        const { error: errorActivar } = await supabase
+            .from('usuarios')
+            .update({ isVerified: true })
+            .eq('id', nuevoUsuario.id);
 
-        const usuarioRespuesta = {
-            id: nuevoUsuario.id,
-            nombre: nuevoUsuario.nombre,
-            email: nuevoUsuario.email,
-            rol: nuevoUsuario.rol
-};
-
-        // Si Brevo fallo, el usuario ya quedo creado, pero avisamos que el correo no llego
-        if (!resultadoEnvio.exito) {
-            return res.status(201).json({
-                message: "Tu cuenta fue creada, pero hubo un problema enviando el codigo de verificacion a tu correo. Intenta iniciar sesion mas tarde o contacta soporte.",
-                emailEnviado: false,
-                usuario: usuarioRespuesta
-            });
+        if (errorActivar) {
+            // No bloquea al usuario: el login ya no exige verificación.
+            console.error("No se pudo marcar la cuenta como verificada:", errorActivar);
         }
 
         return res.status(201).json({
-            message: "Usuario registrado exitosamente. Hemos enviado un codigo de 6 digitos a tu correo.",
-            emailEnviado: true,
-            usuario: usuarioRespuesta
+            message: "Tu cuenta fue creada con éxito. Ya puedes iniciar sesión.",
+            usuario: {
+                id: nuevoUsuario.id,
+                nombre: nuevoUsuario.nombre,
+                email: nuevoUsuario.email,
+                rol: nuevoUsuario.rol
+            }
         });
 
     } catch (error) {
@@ -84,12 +76,7 @@ export const login = async (req, res) => {
             return res.status(400).json({ error: "Contraseña incorrecta" });
         }
 
-        // Verificar si el usuario ha sido verificado
-        if (!usuario.isVerified) {
-            return res.status(403).json({
-                error: "Tu cuenta no ha sido verificada. Por favor ingresa el codigo enviado a tu correo antes de iniciar sesion."
-            });
-        }
+        // Ya no se exige verificación por correo para iniciar sesión.
 
         const token = jwt.sign(
             {
@@ -120,6 +107,7 @@ export const login = async (req, res) => {
 };
 
 // VERIFICAR CUENTA CON CODIGO DE 6 DIGITOS
+// Ya no se usa en el registro. Se deja para no romper la ruta que la importa.
 export const verificarCuenta = async (req, res) => {
     try {
         const { email, codigo } = req.body;
