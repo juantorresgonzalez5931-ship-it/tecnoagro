@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/widgets/app_text_field.dart';
 import '../service/services/user_service.dart';
+import 'package:frontend/widgets/boton_google.dart';
 
 /// Registro de cuenta nueva. Mismo estilo que el inicio de sesión.
 class Formulario extends StatefulWidget {
@@ -120,20 +121,6 @@ class _FormularioState extends State<Formulario> {
         ),
       );
 
-  Widget _botonGoogle() => OutlinedButton(
-        onPressed: () => _mensaje('El registro con Google estará disponible pronto'),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.verdeOscuro,
-          side: BorderSide(color: Colors.grey.shade300),
-        ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Image.asset('assets/images/logo-google.png', width: 20, height: 20),
-          const SizedBox(width: 10),
-          const Text('Continuar con Google'),
-        ]),
-      );
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -210,8 +197,7 @@ class _FormularioState extends State<Formulario> {
                   : const Text('REGISTRARSE'),
             ),
             const SizedBox(height: 16),
-            _botonGoogle(),
-            const SizedBox(height: 22),
+            const BotonGoogle(),            const SizedBox(height: 22),
             Center(
               child: RichText(
                 text: TextSpan(

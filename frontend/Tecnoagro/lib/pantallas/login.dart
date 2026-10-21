@@ -9,6 +9,7 @@ import '/pages/home.dart';
 import '/pantallas/formulario.dart';
 import '/pantallas/bienvenido.dart';
 import '/core/colores.dart';
+import 'package:frontend/widgets/boton_google.dart';
 
 
 
@@ -24,7 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _userService = UserService();
   bool _isLoading = false;
-  bool _isLoadingGoogle = false;
   bool _obscurePassword = true;
 
   @override
@@ -81,17 +81,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (mounted) setState(() => _isLoading = false);
   }
 }
-
-  Future<void> _continuarConGoogle() async {
-    setState(() => _isLoadingGoogle = true);
-    try {
-    } catch (e) {
-      if (!mounted) return;
-      _mostrarMensaje(e.toString(), esError: true);
-    } finally {
-      if (mounted) setState(() => _isLoadingGoogle = false);
-    }
-  }
 
   void _mostrarMensaje(String mensaje, {bool esError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -192,27 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Expanded(child: Divider(color: Colors.grey.shade300)),
               ]),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 56,
-                child: OutlinedButton(
-                  onPressed: _isLoadingGoogle ? null : _continuarConGoogle,
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: _isLoadingGoogle
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset('assets/images/logo-google.png', width: 20, height: 20),
-                            const SizedBox(width: 10),
-                            const Text('Continuar con Google', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                ),
-              ),
+              const BotonGoogle(),
               const SizedBox(height: 22),
               Center(
                 child: RichText(

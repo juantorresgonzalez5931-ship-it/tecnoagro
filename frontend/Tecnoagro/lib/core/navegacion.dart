@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pantallas/carrito.dart';
 import 'package:frontend/pantallas/productos.dart';
+import 'package:frontend/productos_admin/productos_screen.dart';
 
 import 'package:frontend/service/services/sesion_service.dart';
 
