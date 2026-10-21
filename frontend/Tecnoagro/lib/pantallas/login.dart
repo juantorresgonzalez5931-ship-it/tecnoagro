@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/pantallas/admin_home_page.dart';
+import 'package:frontend/admin/admin_home_page.dart';
 import 'package:frontend/pantallas/recuperar.dart';
 import 'package:frontend/widgets/app_text_field.dart';
 import '/service/services/user_service.dart';

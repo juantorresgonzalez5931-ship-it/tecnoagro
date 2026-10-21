@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pantallas/bienvenido.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/admin/perfil_admin_page.dart';
 import '../core/colores.dart';
 import 'admin_dashboard_page.dart';
 import 'admin_productos_page.dart';
@@ -30,25 +31,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final paginas = [
-      AdminDashboardPage(token: widget.token),
-      AdminProductosPage(token: widget.token),
-      Scaffold(
-        backgroundColor: AppColors.fondoCrema,
-        appBar: AppBar(
-          title: const Text('Cuenta'),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-        ),
-        body: Center(
-          child: ElevatedButton.icon(
-            onPressed: _cerrarSesion,
-            icon: const Icon(Icons.logout),
-            label: const Text('Cerrar sesión'),
-          ),
-        ),
-      ),
+   final paginas = [
+    AdminDashboardPage(token: widget.token),
+    AdminProductosPage(token: widget.token),
+    PerfilAdminPage(onCerrarSesion: _cerrarSesion),
+        
     ];
 
     return Scaffold(

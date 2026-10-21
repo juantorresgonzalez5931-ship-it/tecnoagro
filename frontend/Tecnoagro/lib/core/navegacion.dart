@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import 'package:frontend/pantallas/admin_productos_page.dart';
+import 'package:flutter/material.dart';
+import 'package:frontend/admin/admin_productos_page.dart';
 import 'package:frontend/pantallas/carrito.dart';
 import 'package:frontend/pantallas/productos.dart';
 import 'package:frontend/service/services/sesion_service.dart';

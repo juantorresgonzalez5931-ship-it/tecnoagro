@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/models/producto_models.dart';
 import 'package:frontend/pantallas/login.dart';
-import 'package:frontend/productos_admin/productos_screen.dart';
+import 'package:frontend/admin/productos_screen.dart';
 import 'package:frontend/widgets/banner_producto.dart';
 import 'package:frontend/widgets/barra_navegacion.dart';
 import 'package:frontend/service/services/producto_service.dart';
