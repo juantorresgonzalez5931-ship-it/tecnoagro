@@ -8,6 +8,7 @@ import productoRoutes from './routes/producto.js';
 import userRoutes from './routes/user.js';
 import enfermedadRoutes from './routes/enfermedad.js'; 
 import chatRoutes from './routes/chat.js'; 
+import estadisticasRoutes from './routes/estadisticas.js';
 
 // CARGAR VARIABLES
 dotenv.config();
@@ -42,6 +43,8 @@ app.use('/api', enfermedadRoutes);
 app.use('/api', chatRoutes);
 // Montaje de rutas públicas de autenticación
 app.use("/api/auth", authRoutes);
+
+app.use('/api', estadisticasRoutes); // usa el mismo prefijo que tus otras rutas
 
 // Manejador de errores 
 app.use((err, req, res, next) => {

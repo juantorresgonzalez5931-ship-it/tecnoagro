@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pantallas/admin_home_page.dart';
 import 'package:frontend/pantallas/recuperar.dart';
 import 'package:frontend/widgets/app_text_field.dart';
 import '/service/services/user_service.dart';
@@ -8,6 +9,8 @@ import '/pages/home.dart';
 import '/pantallas/formulario.dart';
 import '/pantallas/bienvenido.dart';
 import '/core/colores.dart';
+
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -48,19 +51,36 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString('jwt_token', token);
       await prefs.setString('user_name', usuario.nombre ?? 'Usuario');
       await prefs.setString('user_rol', rol); // ← nueva
+      
       if (!mounted) return;
-      _mostrarMensaje('!Bienvenido, ${usuario.nombre}!');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      _mostrarMensaje(e.toString(), esError: true);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+
+      _mostrarMensaje('¡Bienvenido, ${usuario.nombre}!');
+
+      if (rol == 'admin') {
+        // Si es administrador, ir al panel de control
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AdminHomePage(token: token),
+          ),
+        );
+      } else {
+        // Si es usuario normal, ir a la pantalla principal
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => HomeScreen(), // Reemplaza por tu pantalla real
+          ),
+        );
+      }
+
+  } catch (e) {
+    if (!mounted) return;
+    _mostrarMensaje(e.toString(), esError: true);
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   Future<void> _continuarConGoogle() async {
     setState(() => _isLoadingGoogle = true);
@@ -77,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
-        backgroundColor: esError ? Colors.red.shade700 : Colors.green.shade700,
+        backgroundColor: esError ? const Color.fromARGB(255, 120, 17, 17) : Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
       ),
     );

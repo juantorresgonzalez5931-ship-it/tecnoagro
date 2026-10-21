@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pantallas/admin_dashboard_page.dart';
+import 'package:frontend/pantallas/admin_home_page.dart';
+import 'package:frontend/pantallas/admin_productos_page.dart';
 import 'package:frontend/pantallas/splashscreen.dart';
 import 'core/colores.dart';
 import 'core/tema.dart';

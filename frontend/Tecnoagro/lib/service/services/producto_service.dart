@@ -1,6 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
 import '/models/producto_models.dart';
 import 'api_config.dart';
 import 'sesion_service.dart';
@@ -24,7 +25,6 @@ class ProductoService {
             .map((e) => ProductoModels.fromJson(e as Map<String, dynamic>))
             .toList();
 
-        // Más nuevo primero: por fecha si existe; si no, el último insertado.
         if (lista.isNotEmpty && lista.every((p) => p.creadoEn != null)) {
           lista.sort((a, b) => b.creadoEn!.compareTo(a.creadoEn!));
         } else {
@@ -63,8 +63,12 @@ class ProductoService {
 
     try {
       final token = await SesionService.token();
+      if ((token ?? '').isEmpty) {
+        throw Exception('No hay sesión activa para crear productos');
+      }
+
       final request = http.MultipartRequest('POST', url)
-        ..headers['Authorization'] = 'Bearer ${token ?? ''}'
+        ..headers['Authorization'] = 'Bearer $token'
         ..headers['Accept'] = 'application/json'
         ..fields.addAll(campos)
         ..files.add(await http.MultipartFile.fromPath('imagen', rutaImagen));

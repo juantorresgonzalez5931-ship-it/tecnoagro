@@ -1,0 +1,76 @@
+import 'package:flutter/material.dart';
+import 'package:frontend/pantallas/bienvenido.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../core/colores.dart';
+import 'admin_dashboard_page.dart';
+import 'admin_productos_page.dart';
+// ajusta la ruta a tu BienvenidoScreen
+
+class AdminHomePage extends StatefulWidget {
+  final String token;
+  const AdminHomePage({super.key, required this.token});
+
+  @override
+  State<AdminHomePage> createState() => _AdminHomePageState();
+}
+
+class _AdminHomePageState extends State<AdminHomePage> {
+  int _indice = 0;
+
+  Future<void> _cerrarSesion() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const BienvenidoScreen()),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final paginas = [
+      AdminDashboardPage(token: widget.token),
+      AdminProductosPage(token: widget.token),
+      Scaffold(
+        backgroundColor: AppColors.fondoCrema,
+        appBar: AppBar(
+          title: const Text('Cuenta'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+        ),
+        body: Center(
+          child: ElevatedButton.icon(
+            onPressed: _cerrarSesion,
+            icon: const Icon(Icons.logout),
+            label: const Text('Cerrar sesión'),
+          ),
+        ),
+      ),
+    ];
+
+    return Scaffold(
+      body: IndexedStack(index: _indice, children: paginas),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _indice,
+        onDestinationSelected: (i) => setState(() => _indice = i),
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Resumen'),
+          NavigationDestination(
+              icon: Icon(Icons.inventory_2_outlined),
+              selectedIcon: Icon(Icons.inventory_2),
+              label: 'Productos'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Cuenta'),
+        ],
+      ),
+    );
+  }
+}

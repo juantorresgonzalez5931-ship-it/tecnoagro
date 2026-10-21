@@ -104,11 +104,19 @@ export const crear = async (req, res) => {
 export const editar = async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, error } = await actualizarProducto(id, req.body);
+    const { nombre, descripcion, categoria, principio_activo, precio, stock } = req.body;
+
+    const campos = { nombre, descripcion, categoria, principio_activo, precio, stock };
+    Object.keys(campos).forEach((k) => campos[k] === undefined && delete campos[k]);
+
+    const { data, error } = await actualizarProducto(id, campos);
 
     if (error) {
       console.error('Error al actualizar producto:', error);
       return res.status(500).json({ error: 'Error al actualizar el producto' });
+    }
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
     return res.status(200).json({ message: 'Producto actualizado', producto: data[0] });
