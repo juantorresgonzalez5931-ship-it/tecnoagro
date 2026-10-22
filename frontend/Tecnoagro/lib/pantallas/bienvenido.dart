@@ -1,9 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/admin/admin_home_page.dart';
 import '../core/colores.dart';
 import '../pages/home.dart';
 
 class BienvenidoScreen extends StatelessWidget {
   const BienvenidoScreen({super.key});
+
+  /// Si hay una sesión de administrador guardada, entra al panel admin;
+  /// si no, entra a la pantalla de usuario.
+  Future<void> _entrar(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = (prefs.getString('jwt_token') ?? '').trim();
+    final rol = prefs.getString('user_rol') ?? '';
+    if (!context.mounted) return;
+
+    final Widget destino = (token.isNotEmpty && rol == 'admin')
+        ? AdminHomePage(token: token)
+        : const HomeScreen();
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => destino),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,13 +107,7 @@ class BienvenidoScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (_) => const HomeScreen(),
-                            ),
-                          );
-                        },
+                        onPressed: () => _entrar(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.verdePrimario,
                           foregroundColor: Colors.white,

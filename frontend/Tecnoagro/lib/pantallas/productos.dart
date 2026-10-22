@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/widgets/barra_navegacion.dart';
+import 'package:frontend/widgets/burbuja_ia.dart';
 import 'package:frontend/widgets/catalogo_productos.dart';
 import 'package:frontend/widgets/encabezado_catalogo.dart';
 
@@ -12,6 +13,7 @@ class ProductosScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: const BurbujaIA(),
       backgroundColor: AppColors.fondoCrema,
       body: const SafeArea(
         child: Column(children: [

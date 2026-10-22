@@ -54,39 +54,42 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.fondoCrema,
-      appBar: AppBar(
-        title: const Text('Panel de administración'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-              icon: const Icon(Icons.refresh), onPressed: cargarEstadisticas),
-        ],
-      ),
-      body: cargando
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-              ? Center(child: Text(error!))
-              : RefreshIndicator(
-                  onRefresh: cargarEstadisticas,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _tarjetasResumen(),
-                      const SizedBox(height: 20),
-                      _seccionPedidosPorEstado(),
-                      const SizedBox(height: 20),
-                      _seccionTopProductos(),
-                      const SizedBox(height: 20),
-                      _seccionStockBajo(),
-                      const SizedBox(height: 20),
-                      _seccionUltimosPedidos(),
-                    ],
+    return PopScope(
+      child: Scaffold(
+        
+        backgroundColor: AppColors.fondoCrema,
+        appBar: AppBar(
+          title: const Text('Panel de administración'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+                icon: const Icon(Icons.refresh), onPressed: cargarEstadisticas),
+          ],
+        ),
+        body: cargando
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? Center(child: Text(error!))
+                : RefreshIndicator(
+                    onRefresh: cargarEstadisticas,
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        _tarjetasResumen(),
+                        const SizedBox(height: 20),
+                        _seccionPedidosPorEstado(),
+                        const SizedBox(height: 20),
+                        _seccionTopProductos(),
+                        const SizedBox(height: 20),
+                        _seccionStockBajo(),
+                        const SizedBox(height: 20),
+                        _seccionUltimosPedidos(),
+                      ],
+                    ),
                   ),
-                ),
+      ),
     );
   }
 

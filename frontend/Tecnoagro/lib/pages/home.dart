@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/Ia_screeen/asesor_ia_screen.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/models/producto_models.dart';
 import 'package:frontend/pantallas/login.dart';
 import 'package:frontend/admin/productos_screen.dart';
+import 'package:frontend/Ia_screeen/asesor_ia_screen.dart';
 import 'package:frontend/widgets/banner_producto.dart';
 import 'package:frontend/widgets/barra_navegacion.dart';
 import 'package:frontend/service/services/producto_service.dart';
+import 'package:frontend/widgets/burbuja_ia.dart';
 import 'package:frontend/widgets/perfil_sheet.dart';
 import 'package:frontend/widgets/producto_tile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -89,6 +92,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _cargarProductos();
   }
 
+ Future<void> _irAChatBotIA() async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => const AsesorIAScreen()),
+  );
+  if (!mounted) return;
+  _cargarNombre();
+}
+
   void _proximamente(String seccion) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -150,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+  floatingActionButton: const BurbujaIA(),
       backgroundColor: AppColors.fondoCrema,
       body: SafeArea(
         child: Column(children: [
@@ -171,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 12),
                   _canal(Icons.eco_outlined, 'Enfermedades'),
                   const SizedBox(width: 12),
-                  _canal(Icons.chat_bubble_outline, 'ChatBot IA'),
+                  _canal(Icons.chat_bubble_outline, 'ChatBot IA', _irAChatBotIA),
                 ]),
                 const SizedBox(height: 28),
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -201,10 +214,8 @@ class _HomeScreenState extends State<HomeScreen> {
           if (i == 1) {
             _irAProductos();
           } else if (i == 2) {
-            _proximamente('Asesor IA');
-          } else if (i == 3) {
             abrirCarrito(context);
-          } else if (i == 4) {
+          } else if (i == 3) {
             _abrirPerfil();
           }
         },

@@ -15,45 +15,118 @@ Future<void> abrirPerfil(BuildContext context, {VoidCallback? alCerrarSesion}) a
   mostrarPerfil(context, prefs.getString('user_name') ?? 'Usuario', () async {
     await prefs.remove('jwt_token');
     await prefs.remove('user_name');
+    await prefs.remove('user_rol');
     alCerrarSesion?.call();
   });
+}
+
+/// Pregunta antes de cerrar sesión. Devuelve true si el usuario confirma.
+Future<bool> _confirmarCierre(BuildContext context) async {
+  final confirmado = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text('Cerrar sesión',
+          style: TextStyle(color: AppColors.textoPrincipal, fontWeight: FontWeight.bold)),
+      content: Text('¿Seguro que quieres cerrar sesión?',
+          style: TextStyle(color: AppColors.textoSecundario)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text('Cancelar', style: TextStyle(color: AppColors.textoSecundario)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text('Cerrar sesión',
+              style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
+  return confirmado == true;
 }
 
 /// Panel de "Mi Perfil" para el usuario con sesión iniciada.
 /// [onCerrarSesion] borra los datos guardados y refresca la pantalla.
 void mostrarPerfil(BuildContext context, String nombre, Future<void> Function() onCerrarSesion) {
+  final inicial = nombre.trim().isEmpty ? '?' : nombre.trim()[0].toUpperCase();
+  bool cerrando = false;
+
   showModalBottomSheet(
     context: context,
     backgroundColor: AppColors.fondoCrema,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (sheet) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          CircleAvatar(
-              radius: 32,
-              backgroundColor: const Color(0xFFE6F2E6),
-              child: Icon(Icons.person, size: 36, color: AppColors.verdePrimario)),
-          const SizedBox(height: 12),
-          Text(nombre,
-              style: TextStyle(color: AppColors.textoPrincipal, fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: OutlinedButton(
-              onPressed: () async {
-                await onCerrarSesion();
-                if (sheet.mounted) Navigator.pop(sheet);
-              },
-              style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.verdePrimario,
-                  side: BorderSide(color: AppColors.verdePrimario),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-              child: const Text('CERRAR SESIÓN', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (sheet) => StatefulBuilder(
+      builder: (_, setSheet) => PopScope(
+        canPop: !cerrando, // no se puede cerrar el panel mientras se cierra la sesión
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              // Barra de arrastre
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borde,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Avatar con la inicial del usuario
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: AppColors.verdePrimario,
+                child: Text(inicial,
+                    style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 14),
+              Text(nombre,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textoPrincipal, fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('Mi perfil', style: TextStyle(color: AppColors.textoSecundario, fontSize: 13)),
+              const SizedBox(height: 24),
+              Divider(color: AppColors.borde, height: 1),
+              const SizedBox(height: 20),
+              // Botón de cerrar sesión
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: cerrando
+                      ? null
+                      : () async {
+                          final ok = await _confirmarCierre(sheet);
+                          if (!ok || !sheet.mounted) return;
+                          setSheet(() => cerrando = true);
+                          try {
+                            await onCerrarSesion();
+                          } finally {
+                            cerrando = false;
+                            if (sheet.mounted) Navigator.pop(sheet);
+                          }
+                        },
+                  icon: cerrando
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red.shade700),
+                        )
+                      : const Icon(Icons.logout_rounded),
+                  label: const Text('CERRAR SESIÓN', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    backgroundColor: Colors.red.shade50,
+                    side: BorderSide(color: Colors.red.shade200),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+            ]),
           ),
-        ]),
+        ),
       ),
     ),
   );

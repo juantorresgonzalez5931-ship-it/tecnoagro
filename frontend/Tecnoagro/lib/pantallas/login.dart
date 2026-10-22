@@ -11,8 +11,6 @@ import '/pantallas/bienvenido.dart';
 import '/core/colores.dart';
 import 'package:frontend/widgets/boton_google.dart';
 
-
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -50,43 +48,45 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', token);
       await prefs.setString('user_name', usuario.nombre ?? 'Usuario');
-      await prefs.setString('user_rol', rol); // ← nueva
-      
+      await prefs.setString('user_rol', rol);
+
       if (!mounted) return;
 
       _mostrarMensaje('¡Bienvenido, ${usuario.nombre}!');
 
+      // pushAndRemoveUntil borra la pila: al darle atrás no vuelve a otra pantalla.
       if (rol == 'admin') {
-        // Si es administrador, ir al panel de control
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => AdminHomePage(token: token),
-          ),
+          MaterialPageRoute(builder: (_) => AdminHomePage(token: token)),
+          (route) => false,
         );
       } else {
-        // Si es usuario normal, ir a la pantalla principal
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => HomeScreen(), // Reemplaza por tu pantalla real
-          ),
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
         );
       }
-
-  } catch (e) {
-    if (!mounted) return;
-    _mostrarMensaje(e.toString(), esError: true);
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      if (!mounted) return;
+      _mostrarMensaje(e.toString(), esError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
-}
+
+
+
+
 
   void _mostrarMensaje(String mensaje, {bool esError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
-        backgroundColor: esError ? const Color.fromARGB(255, 120, 17, 17) : Colors.green.shade700,
+        backgroundColor: esError
+            ? const Color.fromARGB(255, 120, 17, 17)
+            : Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -114,8 +114,12 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
-                child: Image.asset('assets/images/logo-tecnoagro.png',
-                    width: 100, height: 100, fit: BoxFit.contain),
+                child: Image.asset(
+                  'assets/images/logo-tecnoagro.png',
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.contain,
+                ),
               ),
               const SizedBox(height: 10),
               ShaderMask(
@@ -124,15 +128,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ).createShader(b),
-                child: const Text('Inicia sesion',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Inicia sesion',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(height: 26),
-              AppTextField(label: 'Correo electronico', hint: 'Ej: usuario@gmail.com', controller: _emailController),
+              AppTextField(
+                label: 'Correo electronico',
+                hint: 'Ej: usuario@gmail.com',
+                controller: _emailController,
+              ),
               const SizedBox(height: 18),
               AppTextField(
                 label: 'Contrasena',
@@ -140,9 +151,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      color: Colors.grey.shade500),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.grey.shade500,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
               Align(
@@ -150,10 +166,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const RecuperarScreen())
-                  ), 
-                  style: TextButton.styleFrom(foregroundColor: AppColors.verdePrimario, padding: EdgeInsets.zero),
-                  child: const Text('¿Olvidaste tu contrasena?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    MaterialPageRoute(builder: (_) => const RecuperarScreen()),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.verdePrimario,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: const Text(
+                    '¿Olvidaste tu contrasena?',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -164,36 +186,75 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.verdePrimario,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('INICIAR SESION', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'INICIAR SESION',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
-              Row(children: [
-                Expanded(child: Divider(color: Colors.grey.shade300)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('o continua con', style: TextStyle(color: AppColors.textoSecundario, fontSize: 13)),
-                ),
-                Expanded(child: Divider(color: Colors.grey.shade300)),
-              ]),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'o continua con',
+                      style: TextStyle(
+                        color: AppColors.textoSecundario,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ],
+              ),
               const SizedBox(height: 16),
-              const BotonGoogle(),
+
+              
+
               const SizedBox(height: 22),
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(color: AppColors.textoSecundario, fontSize: 13.5),
+                    style: TextStyle(
+                      color: AppColors.textoSecundario,
+                      fontSize: 13.5,
+                    ),
                     children: [
                       const TextSpan(text: '¿No tienes cuenta? '),
                       WidgetSpan(
                         child: GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Formulario())),
-                          child: Text('REGISTRATE AQUI',
-                              style: TextStyle(color: AppColors.verdePrimario, fontWeight: FontWeight.bold, fontSize: 13.5)),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const Formulario(),
+                            ),
+                          ),
+                          child: Text(
+                            'REGISTRATE AQUI',
+                            style: TextStyle(
+                              color: AppColors.verdePrimario,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13.5,
+                            ),
+                          ),
                         ),
                       ),
                     ],

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/service/services/api_config.dart';
 import 'package:http/http.dart' as http;
@@ -110,7 +111,7 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
     }
   }
 
-  // ───────────── Formulario (crear y editar) ─────────────
+  // ───────────── Formulario (crear y editar, con foto) ─────────────
 
   Future<void> _formulario([Map<String, dynamic>? producto]) async {
     final editando = producto != null;
@@ -120,6 +121,7 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
     final descripcion = TextEditingController(text: '${producto?['descripcion'] ?? ''}');
     String? categoria = producto?['categoria']?.toString();
     final opciones = {..._categorias, if (categoria != null) categoria}.toList();
+    final fotoActual = (producto?['imagen_url'] ?? producto?['imagen'])?.toString();
     XFile? imagen;
     bool falta = false;
     final formKey = GlobalKey<FormState>();
@@ -162,28 +164,40 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
                   maxLines: 3,
                   decoration: const InputDecoration(labelText: 'Descripción'),
                 ),
-                if (!editando) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.image_outlined),
-                    label: Text(imagen?.name ?? 'Seleccionar imagen', maxLines: 1, overflow: TextOverflow.ellipsis),
-                    onPressed: () async {
-                      final foto = await ImagePicker().pickImage(source: ImageSource.gallery);
-                      if (foto != null) {
-                        setDialogo(() {
-                          imagen = foto;
-                          falta = false;
-                        });
-                      }
-                    },
-                  ),
-                  if (falta)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text('La imagen es obligatoria',
-                          style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                const SizedBox(height: 12),
+                if (imagen != null || fotoActual != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 120,
+                      width: double.infinity,
+                      child: imagen != null
+                          ? Image.file(File(imagen!.path), fit: BoxFit.cover)
+                          : Image.network(fotoActual!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => const Icon(Icons.image_not_supported)),
                     ),
-                ],
+                  ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.image_outlined),
+                  label: Text(imagen == null && fotoActual == null ? 'Seleccionar imagen' : 'Cambiar imagen'),
+                  onPressed: () async {
+                    final foto = await ImagePicker().pickImage(source: ImageSource.gallery);
+                    if (foto != null) {
+                      setDialogo(() {
+                        imagen = foto;
+                        falta = false;
+                      });
+                    }
+                  },
+                ),
+                if (falta)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text('La imagen es obligatoria',
+                        style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                  ),
               ]),
             ),
           ),

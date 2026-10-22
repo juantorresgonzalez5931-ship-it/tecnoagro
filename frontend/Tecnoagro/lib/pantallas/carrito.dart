@@ -4,6 +4,7 @@ import 'package:frontend/core/navegacion.dart';
 import 'package:frontend/core/tema.dart';
 import 'package:frontend/service/services/carrito_service.dart';
 import 'package:frontend/widgets/barra_navegacion.dart';
+import 'package:frontend/widgets/burbuja_ia.dart';
 import 'package:frontend/widgets/producto_tile.dart' show formatearPrecio;
 
 /// Pantalla del carrito: lista de productos, cantidades, total y mensaje de carrito vacío.
@@ -27,6 +28,7 @@ class CarritoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: const BurbujaIA(),
       backgroundColor: AppColors.fondoCrema,
       body: SafeArea(
         child: ListenableBuilder(

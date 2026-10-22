@@ -4,7 +4,7 @@ import 'package:frontend/core/navegacion.dart';
 import 'package:frontend/service/services/carrito_service.dart';
 import 'package:frontend/widgets/perfil_sheet.dart';
 
-/// Barra inferior: Inicio, Productos, Asesor IA, Carrito y Mi Perfil.
+/// Barra inferior: Inicio, Productos, Carrito y Mi Perfil.
 class BarraNavegacion extends StatelessWidget {
   final int actual;
   final ValueChanged<int> onTap;
@@ -13,12 +13,11 @@ class BarraNavegacion extends StatelessWidget {
   static const _tabs = [
     (Icons.home_outlined, Icons.home, 'Inicio'),
     (Icons.shopping_bag_outlined, Icons.shopping_bag, 'Productos'),
-    (Icons.chat_bubble_outline, Icons.chat_bubble, 'Asesor IA'),
     (Icons.shopping_cart_outlined, Icons.shopping_cart, 'Carrito'),
     (Icons.person_outline, Icons.person, 'Mi Perfil'),
   ];
 
-  static const _indiceCarrito = 3;
+  static const _indiceCarrito = 2;
 
   /// El icono del carrito muestra un círculo rojo con la cantidad de productos.
   Widget _icono(IconData icono, bool esCarrito) {
@@ -81,10 +80,8 @@ void navegarDesdeCatalogo(BuildContext context, int i) {
   if (i == 0) {
     Navigator.pop(context);
   } else if (i == 2) {
-    mostrarProximamente(context, 'Asesor IA');
-  } else if (i == 3) {
     abrirCarrito(context, desdeCatalogo: true);
-  } else if (i == 4) {
+  } else if (i == 3) {
     // Si cierra sesión aquí, vuelve al inicio para no dejar abiertos los controles de administrador.
     abrirPerfil(context, alCerrarSesion: () {
       if (context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
@@ -102,9 +99,7 @@ void navegarDesdeCarrito(BuildContext context, int i, {bool desdeCatalogo = fals
     } else {
       reemplazarPorCatalogo(context);
     }
-  } else if (i == 2) {
-    mostrarProximamente(context, 'Asesor IA');
-  } else if (i == 4) {
+  } else if (i == 3) {
     abrirPerfil(context, alCerrarSesion: () {
       if (context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     });
