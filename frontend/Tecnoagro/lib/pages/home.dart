@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 BannerNuevoProducto(producto: _productos.isEmpty ? null : _productos.first),
                 const SizedBox(height: 26),
-                _titulo('Nuestros Canales'),
+                _titulo('Explora TecnoAgro'),
                 const SizedBox(height: 14),
                 Row(children: [
                   _canal(Icons.shopping_bag_outlined, 'Productos', _irAProductos),
