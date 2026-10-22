@@ -16,7 +16,7 @@
     // Arma el system prompt con el catálogo actual desde Supabase
     const construirSystemPrompt = async () => {
         const { data: productos, error } = await supabase
-            .from('helados')
+            .from('productos')
             .select('nombre, descripcion, precio');
 
         if (error) {
