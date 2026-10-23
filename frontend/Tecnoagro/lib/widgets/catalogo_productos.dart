@@ -127,7 +127,7 @@ class CatalogoProductosState extends State<CatalogoProductos> {
               onChanged: (_) => setState(() {}),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Buscar agroquímicos, abonos...',
+                hintText: 'Ej: productos , categorias..etc',
                 hintStyle: TextStyle(color: AppColors.textoPlaceholder, fontSize: 14),
                 prefixIcon: Icon(Icons.search, color: AppColors.textoSecundario),
                 filled: true,

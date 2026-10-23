@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 12),
                   _canal(Icons.eco_outlined, 'Enfermedades'),
                   const SizedBox(width: 12),
-                  _canal(Icons.chat_bubble_outline, 'ChatBot IA', _irAChatBotIA),
+                  _canal(Icons.chat_bubble_outline, 'Asesor Inteligente', _irAChatBotIA),
                 ]),
                 const SizedBox(height: 28),
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

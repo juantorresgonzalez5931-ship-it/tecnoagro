@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/inicio_por_rol.dart';
+import 'package:frontend/core/tema.dart';
 import 'package:frontend/pantallas/recuperar.dart';
 import 'package:frontend/widgets/app_text_field.dart';
 import 'package:frontend/widgets/boton_google.dart';
 import '/service/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/models/user_models.dart';
-import '/pages/home.dart';
 import '/pantallas/formulario.dart';
 import '/pantallas/bienvenido.dart';
 import '/core/colores.dart';
@@ -48,11 +49,15 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString('jwt_token', token);
       await prefs.setString('user_name', usuario.nombre ?? 'Usuario');
       await prefs.setString('user_rol', rol);
+
+      // Decide el inicio según el rol que se acaba de guardar (admin o usuario común).
+      final destino = await pantallaInicioPorRol();
       if (!mounted) return;
-      _mostrarMensaje('!Bienvenido, ${usuario.nombre}!');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      _mostrarMensaje('¡Bienvenido, ${usuario.nombre}!');
+      // Borra toda la navegación anterior para no arrastrar pantallas de otra sesión.
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => destino),
+        (_) => false,
       );
     } catch (e) {
       if (!mounted) return;
@@ -132,23 +137,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     context,
                     MaterialPageRoute(builder: (_) => const RecuperarScreen()),
                   ),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.verdePrimario, padding: EdgeInsets.zero),
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   child: const Text('¿Olvidaste tu contrasena?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 ),
               ),
               const SizedBox(height: 16),
+              // El estilo del botón viene del tema global (core/tema.dart)
               SizedBox(
-                height: 56,
+                height: AppRadius.botonAlto,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _iniciarSesion,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.verdePrimario,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
                   child: _isLoading
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('INICIAR SESION', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      : const Text('INICIAR SESION'),
                 ),
               ),
               const SizedBox(height: 20),

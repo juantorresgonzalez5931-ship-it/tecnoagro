@@ -55,7 +55,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
-              label: 'Cuenta'),
+              label: 'Mi perfil'),
         ],
       ),
     );

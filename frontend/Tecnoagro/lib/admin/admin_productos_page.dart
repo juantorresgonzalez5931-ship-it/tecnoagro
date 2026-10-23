@@ -113,122 +113,22 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
 
   // ───────────── Formulario (crear y editar, con foto) ─────────────
 
+  /// Abre el diálogo y, si se acepta, guarda en el servidor.
+  /// Los controladores viven dentro del diálogo (_DialogoProducto), no aquí.
   Future<void> _formulario([Map<String, dynamic>? producto]) async {
     final editando = producto != null;
-    final nombre = TextEditingController(text: '${producto?['nombre'] ?? ''}');
-    final precio = TextEditingController(text: '${producto?['precio'] ?? ''}');
-    final stock = TextEditingController(text: '${producto?['stock'] ?? ''}');
-    final descripcion = TextEditingController(text: '${producto?['descripcion'] ?? ''}');
-    String? categoria = producto?['categoria']?.toString();
-    final opciones = {..._categorias, if (categoria != null) categoria}.toList();
-    final fotoActual = (producto?['imagen_url'] ?? producto?['imagen'])?.toString();
-    XFile? imagen;
-    bool falta = false;
-    final formKey = GlobalKey<FormState>();
-
-    final aceptado = await showDialog<bool>(
+    final datos = await showDialog<_DatosProducto>(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setDialogo) => AlertDialog(
-          title: Text(editando ? 'Editar producto' : 'Nuevo producto'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                TextFormField(
-                  controller: nombre,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                  validator: (v) => (v ?? '').trim().isEmpty ? 'Ingresa el nombre' : null,
-                ),
-                TextFormField(
-                  controller: precio,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Precio'),
-                  validator: (v) => (double.tryParse((v ?? '').replaceAll(',', '.')) ?? 0) <= 0
-                      ? 'Ingresa un precio válido'
-                      : null,
-                ),
-                TextFormField(
-                  controller: stock,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Stock'),
-                ),
-                DropdownButtonFormField<String>(
-                  initialValue: categoria,
-                  decoration: const InputDecoration(labelText: 'Categoría'),
-                  items: [for (final o in opciones) DropdownMenuItem(value: o, child: Text(o))],
-                  onChanged: (v) => categoria = v,
-                ),
-                TextFormField(
-                  controller: descripcion,
-                  maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Descripción'),
-                ),
-                const SizedBox(height: 12),
-                if (imagen != null || fotoActual != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      height: 120,
-                      width: double.infinity,
-                      child: imagen != null
-                          ? Image.file(File(imagen!.path), fit: BoxFit.cover)
-                          : Image.network(fotoActual!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => const Icon(Icons.image_not_supported)),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.image_outlined),
-                  label: Text(imagen == null && fotoActual == null ? 'Seleccionar imagen' : 'Cambiar imagen'),
-                  onPressed: () async {
-                    final foto = await ImagePicker().pickImage(source: ImageSource.gallery);
-                    if (foto != null) {
-                      setDialogo(() {
-                        imagen = foto;
-                        falta = false;
-                      });
-                    }
-                  },
-                ),
-                if (falta)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text('La imagen es obligatoria',
-                        style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
-                  ),
-              ]),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            ElevatedButton(
-              onPressed: () {
-                if (!formKey.currentState!.validate()) return;
-                if (!editando && imagen == null) return setDialogo(() => falta = true);
-                Navigator.pop(ctx, true);
-              },
-              child: const Text('Guardar'),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => _DialogoProducto(producto: producto),
     );
+    if (datos == null) return;
 
-    final campos = {
-      'nombre': nombre.text.trim(),
-      'precio': precio.text.trim().replaceAll(',', '.'),
-      'stock': stock.text.trim(),
-      'descripcion': descripcion.text.trim(),
-      if (categoria != null) 'categoria': categoria!,
-    };
-    for (final c in [nombre, precio, stock, descripcion]) {
-      c.dispose();
-    }
-    if (aceptado != true) return;
-
-    final ok = await _guardar(editando ? 'PUT' : 'POST', editando ? '/${producto['id']}' : '', campos, imagen);
+    final ok = await _guardar(
+      editando ? 'PUT' : 'POST',
+      editando ? '/${producto['id']}' : '',
+      datos.campos,
+      datos.imagen,
+    );
     if (ok) {
       _aviso(editando ? 'Producto actualizado' : 'Producto creado');
       cargar();
@@ -303,6 +203,164 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
         label: const Text('Nuevo producto'),
       ),
       body: _cuerpo(),
+    );
+  }
+}
+
+/// Lo que devuelve el diálogo cuando se pulsa "Guardar".
+class _DatosProducto {
+  final Map<String, String> campos;
+  final XFile? imagen;
+  const _DatosProducto(this.campos, this.imagen);
+}
+
+/// Diálogo para crear o editar un producto.
+/// Es un widget propio para que sus controladores se destruyan cuando el diálogo
+/// ya terminó de cerrarse (así no aparece el error de "controller used after being disposed").
+class _DialogoProducto extends StatefulWidget {
+  final Map<String, dynamic>? producto;
+  const _DialogoProducto({this.producto});
+
+  @override
+  State<_DialogoProducto> createState() => _DialogoProductoState();
+}
+
+class _DialogoProductoState extends State<_DialogoProducto> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nombre;
+  late final TextEditingController _precio;
+  late final TextEditingController _stock;
+  late final TextEditingController _descripcion;
+  late final List<String> _opciones;
+  String? _categoria;
+  String? _fotoActual;
+  XFile? _imagen;
+  bool _falta = false;
+
+  bool get _editando => widget.producto != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.producto;
+    _nombre = TextEditingController(text: '${p?['nombre'] ?? ''}');
+    _precio = TextEditingController(text: '${p?['precio'] ?? ''}');
+    _stock = TextEditingController(text: '${p?['stock'] ?? ''}');
+    _descripcion = TextEditingController(text: '${p?['descripcion'] ?? ''}');
+    _categoria = p?['categoria']?.toString();
+    _opciones = {..._categorias, if (_categoria != null) _categoria!}.toList();
+    _fotoActual = (p?['imagen_url'] ?? p?['imagen'])?.toString();
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_nombre, _precio, _stock, _descripcion]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _elegirImagen() async {
+    final foto = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (foto != null && mounted) {
+      setState(() {
+        _imagen = foto;
+        _falta = false;
+      });
+    }
+  }
+
+  void _aceptar() {
+    if (!_formKey.currentState!.validate()) return;
+    if (!_editando && _imagen == null) {
+      setState(() => _falta = true);
+      return;
+    }
+    Navigator.pop(
+      context,
+      _DatosProducto({
+        'nombre': _nombre.text.trim(),
+        'precio': _precio.text.trim().replaceAll(',', '.'),
+        'stock': _stock.text.trim(),
+        'descripcion': _descripcion.text.trim(),
+        if (_categoria != null) 'categoria': _categoria!,
+      }, _imagen),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(_editando ? 'Editar producto' : 'Nuevo producto'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextFormField(
+              controller: _nombre,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+              validator: (v) => (v ?? '').trim().isEmpty ? 'Ingresa el nombre' : null,
+            ),
+            TextFormField(
+              controller: _precio,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Precio'),
+              validator: (v) =>
+                  (double.tryParse((v ?? '').replaceAll(',', '.')) ?? 0) <= 0 ? 'Ingresa un precio válido' : null,
+            ),
+            TextFormField(
+              controller: _stock,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Stock'),
+              validator: (v) {
+                final n = int.tryParse((v ?? '').trim());
+                return n == null || n < 0 ? 'Ingresa un stock válido' : null;
+              },
+            ),
+            DropdownButtonFormField<String>(
+              initialValue: _categoria,
+              decoration: const InputDecoration(labelText: 'Categoría'),
+              items: [for (final o in _opciones) DropdownMenuItem(value: o, child: Text(o))],
+              onChanged: (v) => _categoria = v,
+            ),
+            TextFormField(
+              controller: _descripcion,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Descripción'),
+            ),
+            const SizedBox(height: 12),
+            if (_imagen != null || _fotoActual != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: 120,
+                  width: double.infinity,
+                  child: _imagen != null
+                      ? Image.file(File(_imagen!.path), fit: BoxFit.cover)
+                      : Image.network(_fotoActual!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const Icon(Icons.image_not_supported)),
+                ),
+              ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.image_outlined),
+              label: Text(_imagen == null && _fotoActual == null ? 'Seleccionar imagen' : 'Cambiar imagen'),
+              onPressed: _elegirImagen,
+            ),
+            if (_falta)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('La imagen es obligatoria',
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+              ),
+          ]),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(onPressed: _aceptar, child: const Text('Guardar')),
+      ],
     );
   }
 }

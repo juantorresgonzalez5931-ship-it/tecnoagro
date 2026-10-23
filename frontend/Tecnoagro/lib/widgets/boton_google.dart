@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
-import 'package:frontend/pages/home.dart';
+import 'package:frontend/core/inicio_por_rol.dart';
 import 'package:frontend/service/services/google_service.dart';
 
 /// Botón "Continuar con Google": abre el selector de cuentas y entra a la app.
@@ -29,10 +29,13 @@ class _BotonGoogleState extends State<BotonGoogle> {
     setState(() => _cargando = true);
     try {
       final nombre = await GoogleService().iniciarSesion();
+      // Decide el inicio según el rol que se acaba de guardar (admin o usuario común).
+      final destino = await pantallaInicioPorRol();
       if (!mounted) return;
       _mensaje('¡Bienvenido, $nombre!');
+      // Borra toda la navegación anterior para no arrastrar pantallas de otra sesión.
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => destino),
         (_) => false,
       );
     } on GoogleCancelado {
