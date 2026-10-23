@@ -96,9 +96,10 @@ class BienvenidoScreen extends StatelessWidget {
                       'resolver tus dudas acerca del tema agrícola con '
                       'nuestra inteligencia artificial y también separar '
                       'tus productos desde la app.',
+                      textAlign: TextAlign.justify,
                       style: TextStyle(
                         color: AppColors.textoSecundario,
-                        fontSize: 14.5,
+                        fontSize: 15,
                         height: 1.5,
                       ),
                     ),
