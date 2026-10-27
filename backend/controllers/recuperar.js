@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { obtenerPorEmail, actualizarContrasena } from '../models/user.js';
 import { crearCodigo, obtenerCodigoValido, marcarCodigoUsado } from '../models/recuperar.js';
 import { enviarCorreo } from '../utils/sendEmail.js';
