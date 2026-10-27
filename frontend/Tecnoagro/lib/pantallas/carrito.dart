@@ -41,7 +41,7 @@ class CarritoScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BarraNavegacion(
-        actual: 3,
+        actual: 2,
         onTap: (i) => navegarDesdeCarrito(context, i, desdeCatalogo: desdeCatalogo),
       ),
     );

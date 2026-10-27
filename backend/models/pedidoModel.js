@@ -73,3 +73,21 @@ export const crearDetallePedido = async (detalleData) => {
 
   return { data, error };
 };
+
+// Buscar reserva por codigo
+export const obtenerPedidoPorCodigo = async (codigo) => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select(`
+      *,
+      usuario:usuario_id(id, nombre, email),
+      detalles:detalle_pedidos(
+        id, cantidad, precio_unitario, subtotal,
+        producto:producto_id(id, nombre, imagen_url)
+      )
+    `)
+    .eq('codigo', codigo)
+    .single();
+
+  return { data, error };
+};

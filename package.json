@@ -4,7 +4,7 @@
   "description": "",
   "main": "backend/index.js",
   "scripts": {
-    "dev": "nodemon backend/index.js",
+    "dev": "nodemon --watch backend backend/index.js",
     "start": "node backend/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,8 +15,7 @@
   "dependencies": {
     "@getbrevo/brevo": "^6.0.3",
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.116.0",
-    "bcrypt": "^6.0.0",
+    
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
