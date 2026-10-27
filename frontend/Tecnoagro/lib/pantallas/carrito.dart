@@ -28,7 +28,6 @@ class CarritoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: const BurbujaIA(),
       backgroundColor: AppColors.fondoCrema,
       body: SafeArea(
         child: ListenableBuilder(
