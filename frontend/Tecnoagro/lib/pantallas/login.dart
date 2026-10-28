@@ -49,6 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString('jwt_token', token);
       await prefs.setString('user_name', usuario.nombre ?? 'Usuario');
       await prefs.setString('user_rol', rol);
+      final idUsuario = int.tryParse(usuario.id ?? '');
+      if (idUsuario != null) await prefs.setInt('user_id', idUsuario);
+
 
       // Decide el inicio según el rol que se acaba de guardar (admin o usuario común).
       final destino = await pantallaInicioPorRol();

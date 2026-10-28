@@ -22,16 +22,24 @@ export const enviarCorreo = async (destinatario, asunto, html) => {
 };
 
 // Función para enviar un correo de confirmación de registro
-export const enviarConfirmacionPedido = async (email, nombre, pedidoId, total) => {
+// Correo de confirmación de reserva
+export const enviarConfirmacionPedido = async (email, nombre, pedidoId, total, codigo, fechaLimite) => {
+    const limite = fechaLimite
+        ? new Date(fechaLimite).toLocaleString('es-CO', { dateStyle: 'long', timeStyle: 'short' })
+        : null;
+
     return transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
-        subject: `Confirmación de pedido #${pedidoId} - TecnoAgro`,
+        subject: `Reserva ${codigo} confirmada - TecnoAgro`,
         html: `
             <p>Hola ${nombre},</p>
-            <p>Tu pedido <strong>#${pedidoId}</strong> ha sido creado con éxito.</p>
-            <p>Total: <strong>$${total}</strong></p>
-            <p>Te avisaremos cuando el estado de tu pedido cambie.</p>
+            <p>Tu reserva <strong>#${pedidoId}</strong> fue creada con éxito.</p>
+            <p>Código para reclamar en la tienda:</p>
+            <h2 style="letter-spacing:2px;">${codigo}</h2>
+            <p>Total a pagar en tienda: <strong>$${total}</strong></p>
+            ${limite ? `<p>Tienes hasta el <strong>${limite}</strong> para reclamarla; después se libera y vence.</p>` : ''}
+            <p>Presenta este código en la tienda para recoger tus productos.</p>
         `
     });
 };
