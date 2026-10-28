@@ -1,50 +1,120 @@
 import 'dart:convert';
-import 'package:frontend/service/services/api_config.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:frontend/service/services/carrito_service.dart';
-import 'package:frontend/service/services/api_config.dart'; // ajusta la ruta real de ApiConfig
 
-// ajusta la ruta real de ApiConfig
+import 'package:frontend/service/services/api_config.dart';
+import 'package:frontend/service/services/carrito_service.dart';
 
 class PedidoService {
-  /// Crea la reserva con lo que hay en el carrito y devuelve el pedido (con su código).
-  Future<Map<String, dynamic>> crearReserva({String? telefono}) async {
+  Future<Map<String, dynamic>> crearReserva({
+    String? telefono,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token') ?? '';
-    final usuarioId = prefs.getInt('user_id');
 
-    if (token.isEmpty || usuarioId == null) {
+    final token = prefs.getString('jwt_token') ?? '';
+
+    if (token.isEmpty) {
       throw Exception('Debes iniciar sesión para reservar');
     }
 
     final items = CarritoService.instancia.items;
-    if (items.isEmpty) throw Exception('El carrito está vacío');
 
-    final respuesta = await http.post(
+    if (items.isEmpty) {
+      throw Exception('El carrito está vacío');
+    }
+
+    final body = {
+      'telefono': telefono ?? '',
+      'detalles': items.map((item) {
+        return {
+          'producto_id': int.tryParse(item.id) ?? item.id,
+          'cantidad': item.cantidad,
+        };
+      }).toList(),
+    };
+
+    print('========== RESERVA ==========');
+    print('TOKEN: $token');
+    print('BODY ENVIADO:');
+    print(jsonEncode(body));
+
+    final response = await http.post(
       Uri.parse('${ApiConfig.apiBaseUrl}/pedidos'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'usuario_id': usuarioId,
-        'telefono': telefono,
-        'detalles': items
-            .map(
-              (i) => {
-                'producto_id': int.tryParse(i.id) ?? i.id,
-                'cantidad': i.cantidad,
-              },
-            )
-            .toList(),
-      }),
+      body: jsonEncode(body),
     );
 
-    final data = jsonDecode(respuesta.body);
-    if (respuesta.statusCode != 201) {
-      throw Exception(data['error'] ?? 'No se pudo crear la reserva');
+    print('STATUS: ${response.statusCode}');
+    print('RESPONSE: ${response.body}');
+    print('=============================');
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 201) {
+      throw Exception(
+        data['error'] ?? 'No se pudo crear la reserva',
+      );
     }
+
     return Map<String, dynamic>.from(data['pedido']);
   }
+
+  Future<List<dynamic>> obtenerMisPedidos() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final token = prefs.getString('jwt_token') ?? '';
+
+    if (token.isEmpty) {
+      throw Exception('Debe iniciar sesión');
+    }
+
+    final response = await http.get(
+      Uri.parse('${ApiConfig.apiBaseUrl}/mis-pedidos'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    print('MIS PEDIDOS STATUS: ${response.statusCode}');
+    print('MIS PEDIDOS RESPONSE: ${response.body}');
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        data['error'] ?? 'Error al obtener reservas',
+      );
+    }
+
+    return data;
+  }
+
+  Future<Map<String, dynamic>> obtenerPedido(
+  int id,
+) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final token = prefs.getString('jwt_token') ?? '';
+
+  final response = await http.get(
+    Uri.parse('${ApiConfig.apiBaseUrl}/pedidos/$id'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  final data = jsonDecode(response.body);
+
+  if (response.statusCode != 200) {
+    throw Exception(
+      data['error'] ?? 'Error al obtener reserva',
+    );
+  }
+
+  return data;
+}
 }

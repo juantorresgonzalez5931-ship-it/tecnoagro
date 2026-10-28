@@ -9,6 +9,7 @@ import userRoutes from './routes/user.js';
 import enfermedadRoutes from './routes/enfermedad.js'; 
 import chatRoutes from './routes/chat.js'; 
 import estadisticasRoutes from './routes/estadisticas.js';
+import { vencerReservas } from './controllers/pedido.js';
 
 // CARGAR VARIABLES
 dotenv.config();
@@ -28,6 +29,12 @@ app.get('/', (req, res) => {
         Version: "1.0.0"
     });
 });
+// Montando las rutas de la API
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+
 
 // RUTAS DE AUTENTICACION
 app.use('/auth', authRoutes);
@@ -57,6 +64,10 @@ app.use((err, req, res, next) => {
 
 // CONFIGURAMOS EL PUERTO
 const PORT = process.env.PORT || 3000;
+
+
+vencerReservas();
+setInterval(vencerReservas, 10 * 60 * 1000);
 
 // PONER A ESCUCHAR EL SERVIDOR
 app.listen(PORT, () => {

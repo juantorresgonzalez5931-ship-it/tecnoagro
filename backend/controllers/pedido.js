@@ -6,27 +6,65 @@ import {
   obtenerPedidosPorUsuario,
   actualizarEstadoPedido,
   obtenerPedidoPorCodigo,
+  obtenerPedidosVencidos,
 } from '../models/pedidoModel.js';
 import { obtenerPorId } from '../models/user.js';
 import { enviarConfirmacionPedido } from '../utils/sendEmail.js';
 
-const ESTADOS_VALIDOS = ['pendiente', 'entregado', 'cancelado', 'vencido'];
+const ESTADOS_DESTINO = ['entregado', 'cancelado', 'vencido'];
 const HORAS_LIMITE = 48;
 
 const generarCodigo = () =>
   'RES-' + crypto.randomBytes(3).toString('hex').toUpperCase(); // ej: RES-A3F9C1
 
+// Devuelve al inventario las cantidades reservadas
+const devolverStock = async (items) => {
+  for (const { producto_id, cantidad } of items) {
+    const { data: prod } = await supabase
+      .from('productos')
+      .select('stock')
+      .eq('id', producto_id)
+      .single();
+    if (prod) {
+      await supabase
+        .from('productos')
+        .update({ stock: prod.stock + cantidad })
+        .eq('id', producto_id);
+    }
+  }
+};
+
 // ---------- Crear reserva ----------
 export const crearPedidoConDetalles = async (req, res) => {
   try {
-    const { usuario_id, telefono, detalles } = req.body;
 
-    if (!usuario_id || !Array.isArray(detalles) || detalles.length === 0) {
-      return res.status(400).json({ error: 'Datos incompletos' });
+    console.log('=== CREAR PEDIDO ===');
+    console.log(req.body);
+    console.log(req.usuario);
+
+    const { telefono, detalles } = req.body;
+    const usuario_id = req.usuario.id;
+
+    console.log('telefono:', telefono);
+    console.log('detalles:', detalles);
+    console.log('esArray:', Array.isArray(detalles));
+    console.log('length:', detalles?.length);
+
+    if (!Array.isArray(detalles) || detalles.length === 0) {
+      return res.status(400).json({
+        error: 'Datos incompletos'
+      });
     }
+    // Une productos repetidos sumando sus cantidades
+    const items = [
+      ...detalles.reduce(
+        (m, d) => m.set(d.producto_id, (m.get(d.producto_id) || 0) + Number(d.cantidad)),
+        new Map()
+      ),
+    ].map(([producto_id, cantidad]) => ({ producto_id, cantidad }));
 
     // Precio y stock reales desde la BD (no se confía en el cliente)
-    const ids = detalles.map((d) => d.producto_id);
+    const ids = items.map((d) => d.producto_id);
     const { data: productos, error: errProd } = await supabase
       .from('productos')
       .select('id, precio, stock')
@@ -36,8 +74,8 @@ export const crearPedidoConDetalles = async (req, res) => {
 
     let total = 0;
     const filas = [];
-    for (const d of detalles) {
-      const cantidad = Number(d.cantidad);
+    for (const d of items) {
+      const cantidad = d.cantidad;
       if (!Number.isInteger(cantidad) || cantidad < 1) {
         return res.status(400).json({ error: 'Cantidad invalida' });
       }
@@ -120,6 +158,11 @@ export const obtenerPedidoUsuario = async (req, res) => {
     const { id } = req.params;
     const { data, error } = await obtenerPedidoConDetalles(id);
     if (error || !data) return res.status(404).json({ error: 'Reserva no encontrada' });
+
+    if (req.usuario.rol !== 'admin' && data.usuario_id !== req.usuario.id) {
+      return res.status(403).json({ error: 'No tienes acceso a esta reserva' });
+    }
+
     return res.status(200).json(data);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -128,16 +171,24 @@ export const obtenerPedidoUsuario = async (req, res) => {
 
 export const misPedidos = async (req, res) => {
   try {
-    const { usuario_id } = req.query;
-    if (!usuario_id) return res.status(400).json({ error: 'usuario_id requerido' });
+    const usuario_id = req.usuario.id;
+
     const { data, error } = await obtenerPedidosPorUsuario(usuario_id);
-    if (error) return res.status(500).json({ error: 'Error al obtener reservas' });
+
+    if (error) {
+      return res.status(500).json({
+        error: 'Error al obtener reservas'
+      });
+    }
+
     return res.status(200).json(data);
+
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error: error.message
+    });
   }
 };
-
 // ---------- Tienda: buscar por codigo ----------
 export const buscarPedidoPorCodigo = async (req, res) => {
   try {
@@ -156,8 +207,8 @@ export const cambiarEstadoPedido = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
 
-    if (!ESTADOS_VALIDOS.includes(estado)) {
-      return res.status(400).json({ error: `Estado invalido. Usa: ${ESTADOS_VALIDOS.join(', ')}` });
+    if (!ESTADOS_DESTINO.includes(estado)) {
+      return res.status(400).json({ error: `Estado invalido. Usa: ${ESTADOS_DESTINO.join(', ')}` });
     }
 
     const { data: pedido, error: errPedido } = await obtenerPedidoConDetalles(id);
@@ -172,23 +223,33 @@ export const cambiarEstadoPedido = async (req, res) => {
 
     // Si se cancela o vence, el stock vuelve al inventario
     if (estado === 'cancelado' || estado === 'vencido') {
-      for (const d of pedido.detalles) {
-        const { data: prod } = await supabase
-          .from('productos')
-          .select('stock')
-          .eq('id', d.producto.id)
-          .single();
-        if (prod) {
-          await supabase
-            .from('productos')
-            .update({ stock: prod.stock + d.cantidad })
-            .eq('id', d.producto.id);
-        }
-      }
+      await devolverStock(
+        pedido.detalles.map((d) => ({ producto_id: d.producto.id, cantidad: d.cantidad }))
+      );
     }
 
     return res.status(200).json({ message: 'Estado actualizado', pedido: data[0] });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
+};
+
+// ---------- Vencimiento automatico ----------
+export const vencerReservas = async () => {
+  const { data: vencidos, error } = await obtenerPedidosVencidos();
+  if (error || !vencidos?.length) return 0;
+
+  for (const p of vencidos) {
+    // Se marca primero y solo si sigue pendiente, para no devolver stock dos veces
+    const { data: act } = await supabase
+      .from('pedidos')
+      .update({ estado: 'vencido', actualizado_en: new Date() })
+      .eq('id', p.id)
+      .eq('estado', 'pendiente')
+      .select();
+
+    if (act?.length) await devolverStock(p.detalles);
+  }
+
+  return vencidos.length;
 };

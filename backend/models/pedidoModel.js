@@ -91,3 +91,14 @@ export const obtenerPedidoPorCodigo = async (codigo) => {
 
   return { data, error };
 };
+
+// Obtener pedidos vencidos
+export const obtenerPedidosVencidos = async () => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('id, detalles:detalle_pedidos(producto_id, cantidad)')
+    .eq('estado', 'pendiente')
+    .lt('fecha_limite', new Date().toISOString());
+
+  return { data, error };
+};

@@ -6,21 +6,23 @@ import {
   buscarPedidoPorCodigo,
   cambiarEstadoPedido,
 } from '../controllers/pedido.js';
+import { verificarToken, verificarAdmin } from '../middleware/authMiddleware.js'; 
 
 const router = express.Router();
 
-// POST - Crear pedido (con correo automático)
-router.post('/pedidos', crearPedidoConDetalles);
+// POST - Crear reserva (usuario logueado)
+router.post('/pedidos', verificarToken, crearPedidoConDetalles);
 
-// GET - Mis pedidos (por usuario)
-router.get('/mis-pedidos', misPedidos);
+// GET - Mis reservas (salen del token)
+router.get('/mis-pedidos', verificarToken, misPedidos);
 
-// GET - Obtener pedido por ID
-router.get('/pedidos/:id', obtenerPedidoUsuario);
-// GET - Obtener pedido por código
-router.get('/codigo/:codigo', buscarPedidoPorCodigo);
-// PATCH - Cambiar estado del pedido
-router.patch('/:id/estado', cambiarEstadoPedido);
+// GET - Buscar reserva por código (solo admin)
+router.get('/pedidos/codigo/:codigo', verificarToken, verificarAdmin, buscarPedidoPorCodigo);
+
+// GET - Obtener reserva por ID (dueño o admin)
+router.get('/pedidos/:id', verificarToken, obtenerPedidoUsuario);
+
+// PATCH - Cambiar estado (solo admin)
+router.patch('/pedidos/:id/estado', verificarToken, verificarAdmin, cambiarEstadoPedido);
 
 export default router;
-

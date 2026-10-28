@@ -4,7 +4,7 @@ import 'package:frontend/pantallas/carrito.dart';
 import 'package:frontend/pantallas/productos.dart';
 import 'package:frontend/service/services/sesion_service.dart';
 import 'package:frontend/Ia_screeen/asesor_ia_screen.dart';
-import 'package:frontend/Ia_screeen/asesor_ia_screen.dart';
+
 
 /// Devuelve el catÃ¡logo que le corresponde al usuario: el de administrador o el de usuario comÃºn.
 Future<Widget> _catalogoSegunRol() async {

@@ -4,7 +4,8 @@ import 'package:frontend/core/navegacion.dart';
 import 'package:frontend/core/tema.dart';
 import 'package:frontend/service/services/carrito_service.dart';
 import 'package:frontend/widgets/barra_navegacion.dart';
-import 'package:frontend/widgets/burbuja_ia.dart';
+import 'package:frontend/service/services/pedido_service.dart';
+import 'package:frontend/pantallas/reserva_exitosa_screen.dart';
 import 'package:frontend/widgets/producto_tile.dart' show formatearPrecio;
 
 /// Pantalla del carrito: lista de productos, cantidades, total y mensaje de carrito vacío.
@@ -28,7 +29,6 @@ class CarritoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: const BurbujaIA(),
       backgroundColor: AppColors.fondoCrema,
       body: SafeArea(
         child: ListenableBuilder(
@@ -234,8 +234,84 @@ class CarritoScreen extends StatelessWidget {
           SizedBox(
             height: AppRadius.botonAlto,
             child: ElevatedButton(
-              onPressed: () => mostrarProximamente(context, 'La compra'),
-              child: const Text('COMPRAR'),
+              onPressed: () async {
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: CircularProgressIndicator(),
+            ),
+
+            SizedBox(height: 20),
+
+            Text(
+              'Creando reserva',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(height: 10),
+
+            Text(
+              'Estamos verificando inventario y generando tu código...',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  try {
+    final pedido = await PedidoService().crearReserva(
+      telefono: '3001234567',
+    );
+
+    if (!context.mounted) return;
+
+    Navigator.pop(context);
+
+    CarritoService.instancia.vaciar();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReservaExitosaScreen(
+          pedido: pedido,
+        ),
+      ),
+    );
+
+  } catch (e) {
+
+    if (!context.mounted) return;
+
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(e.toString()),
+      ),
+    );
+  }
+},
+              child: const Text('RESERVAR'),
             ),
           ),
         ]),
