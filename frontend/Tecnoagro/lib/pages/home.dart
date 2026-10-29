@@ -13,6 +13,8 @@ import 'package:frontend/widgets/perfil_sheet.dart';
 import 'package:frontend/widgets/producto_tile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/core/navegacion.dart';
+import 'package:frontend/pantallas/enfermedades.dart';
+import 'package:frontend/pantallas/busqueda.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -92,14 +94,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _cargarProductos();
   }
 
- Future<void> _irAChatBotIA() async {
-  await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => const AsesorIAScreen()),
-  );
-  if (!mounted) return;
-  _cargarNombre();
-}
+  Future<void> _irAChatBotIA() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AsesorIAScreen()),
+    );
+    if (!mounted) return;
+    _cargarNombre();
+  }
+
+  Future<void> _irAEnfermedades() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EnfermedadesScreen()),
+    );
+    if (!mounted) return;
+    _cargarNombre();
+  }
 
   void _proximamente(String seccion) {
     ScaffoldMessenger.of(context)
@@ -147,7 +158,10 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.fondoCrema,
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
         child: Row(children: [
-          _circulo(Icons.search, () => _proximamente('La búsqueda')),
+          _circulo(Icons.search, () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BusquedaScreen()),
+              )),          
           Expanded(
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Image.asset('assets/images/logo-tecnoagro.png', width: 40, height: 40),
@@ -182,10 +196,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(children: [
                   _canal(Icons.shopping_bag_outlined, 'Productos', _irAProductos),
                   const SizedBox(width: 12),
-                  _canal(Icons.eco_outlined, 'Enfermedades'),
+                  _canal(Icons.eco_outlined, 'Enfermedades', _irAEnfermedades),
                   const SizedBox(width: 12),
                   _canal(Icons.chat_bubble_outline, 'Asesor Inteligente', _irAChatBotIA),
                 ]),
+
                 const SizedBox(height: 28),
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   _titulo('Más Buscados'),

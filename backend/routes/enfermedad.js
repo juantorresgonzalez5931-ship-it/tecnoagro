@@ -6,7 +6,8 @@ import {
     editar,
     eliminar,
     vincularProducto,
-    desvincularProducto
+    desvincularProducto,
+    recomendarProductos
 } from '../controllers/enfermedadControllers.js';
 import { verificarToken, verificarAdmin } from '../middleware/authMiddleware.js';
 import { upload } from '../config/cloudinary.js';
@@ -18,8 +19,9 @@ router.get('/enfermedades', listarEnfermedades);
 router.get('/enfermedades/:id', obtenerEnfermedad);
 
 // Rutas privadas (solo admin)
+router.post('/enfermedades/recomendar-productos', verificarToken, verificarAdmin, recomendarProductos);
 router.post('/enfermedades', verificarToken, verificarAdmin, upload.single('imagen'), crear);
-router.put('/enfermedades/:id', verificarToken, verificarAdmin, editar);
+router.put('/enfermedades/:id', verificarToken, verificarAdmin, upload.single('imagen'), editar);
 router.delete('/enfermedades/:id', verificarToken, verificarAdmin, eliminar);
 router.post('/enfermedades/:id/productos', verificarToken, verificarAdmin, vincularProducto);
 router.delete('/enfermedades/:id/productos/:productoId', verificarToken, verificarAdmin, desvincularProducto);

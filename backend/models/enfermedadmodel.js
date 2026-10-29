@@ -3,11 +3,19 @@ import { supabase } from '../config/supabase.js';
 export const obtenerEnfermedades = async () => {
     const { data, error } = await supabase
         .from('enfermedades')
-        .select('*');
+        .select(`
+            *,
+            enfermedad_producto (
+                producto:producto_id (
+                    id, nombre, precio, categoria, imagen_url
+                )
+            )
+        `)
+        .order('nombre', { ascending: true });
     return { data, error };
 };
 
-//Obtener enfermedad por id
+// Obtener enfermedad por id (con sus productos recomendados)
 export const obtenerEnfermedadPorId = async (id) => {
     const { data, error } = await supabase
         .from('enfermedades')
@@ -15,7 +23,7 @@ export const obtenerEnfermedadPorId = async (id) => {
             *,
             enfermedad_producto (
                 producto:producto_id (
-                    id, nombre, precio, imagen_url
+                    id, nombre, precio, categoria, imagen_url
                 )
             )
         `)
@@ -24,7 +32,6 @@ export const obtenerEnfermedadPorId = async (id) => {
     return { data, error };
 };
 
-//Crear enfermedad
 export const crearEnfermedad = async (enfermedad) => {
     const { data, error } = await supabase
         .from('enfermedades')
@@ -33,8 +40,6 @@ export const crearEnfermedad = async (enfermedad) => {
     return { data, error };
 };
 
-
-//Actualizar enfermedad
 export const actualizarEnfermedad = async (id, cambios) => {
     const { data, error } = await supabase
         .from('enfermedades')
@@ -44,7 +49,6 @@ export const actualizarEnfermedad = async (id, cambios) => {
     return { data, error };
 };
 
-//Eliminar enfermedad
 export const eliminarEnfermedad = async (id) => {
     const { error } = await supabase
         .from('enfermedades')
@@ -53,7 +57,6 @@ export const eliminarEnfermedad = async (id) => {
     return { error };
 };
 
-// Asociar un producto a una enfermedad
 export const asociarProducto = async (enfermedad_id, producto_id) => {
     const { data, error } = await supabase
         .from('enfermedad_producto')
@@ -62,12 +65,26 @@ export const asociarProducto = async (enfermedad_id, producto_id) => {
     return { data, error };
 };
 
-// Desasociar un producto de una enfermedad
 export const desasociarProducto = async (enfermedad_id, producto_id) => {
     const { error } = await supabase
         .from('enfermedad_producto')
         .delete()
         .eq('enfermedad_id', enfermedad_id)
         .eq('producto_id', producto_id);
+    return { error };
+};
+
+// Deja vinculados exactamente los productos de la lista (borra los demás).
+export const reemplazarProductos = async (enfermedad_id, ids) => {
+    const { error: errorBorrar } = await supabase
+        .from('enfermedad_producto')
+        .delete()
+        .eq('enfermedad_id', enfermedad_id);
+    if (errorBorrar) return { error: errorBorrar };
+    if (!ids.length) return { error: null };
+
+    const { error } = await supabase
+        .from('enfermedad_producto')
+        .insert(ids.map((producto_id) => ({ enfermedad_id, producto_id })));
     return { error };
 };
