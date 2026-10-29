@@ -252,4 +252,39 @@ export const vencerReservas = async () => {
   }
 
   return vencidos.length;
+
+};
+  export const listarReservas = async (req, res) => {
+  try {
+
+    const { data, error } = await supabase
+      .from('pedidos')
+      .select(`
+        id,
+        codigo,
+        estado,
+        total,
+        telefono,
+        fecha_limite,
+        usuarios (
+          id,
+          nombre,
+          email
+        )
+      `)
+      .order('id', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+
+    return res.status(200).json(data);
+
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
 };

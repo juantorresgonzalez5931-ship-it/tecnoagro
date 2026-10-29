@@ -17,7 +17,6 @@ class CarritoScreen extends StatelessWidget {
   static const _verdeSuave = Color(0xFFE6F2E6);
 
   CarritoService get _carrito => CarritoService.instancia;
-
   void _irAProductos(BuildContext context) {
     if (desdeCatalogo) {
       Navigator.pop(context);

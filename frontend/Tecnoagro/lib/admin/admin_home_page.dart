@@ -5,6 +5,7 @@ import 'package:frontend/admin/perfil_admin_page.dart';
 import '../core/colores.dart';
 import 'admin_dashboard_page.dart';
 import 'admin_productos_page.dart';
+import 'admin_reservas_page.dart';
 // ajusta la ruta a tu BienvenidoScreen
 
 class AdminHomePage extends StatefulWidget {
@@ -32,11 +33,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
   @override
   Widget build(BuildContext context) {
    final paginas = [
-    AdminDashboardPage(token: widget.token),
-    AdminProductosPage(token: widget.token),
-    PerfilAdminPage(onCerrarSesion: _cerrarSesion),
-        
-    ];
+  AdminDashboardPage(token: widget.token),
+  AdminProductosPage(token: widget.token),
+  AdminReservasPage(token: widget.token),
+  PerfilAdminPage(onCerrarSesion: _cerrarSesion),
+];
 
     return Scaffold(
       body: IndexedStack(index: _indice, children: paginas),
@@ -44,19 +45,32 @@ class _AdminHomePageState extends State<AdminHomePage> {
         selectedIndex: _indice,
         onDestinationSelected: (i) => setState(() => _indice = i),
         destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
-              label: 'Resumen'),
-          NavigationDestination(
-              icon: Icon(Icons.inventory_2_outlined),
-              selectedIcon: Icon(Icons.inventory_2),
-              label: 'Productos'),
-          NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'Mi perfil'),
-        ],
+
+         NavigationDestination(
+        icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard),
+        label: 'Resumen',
+  ),
+
+        NavigationDestination(
+        icon: Icon(Icons.inventory_2_outlined),
+        selectedIcon: Icon(Icons.inventory_2),
+        label: 'Productos',
+  ),
+
+         NavigationDestination(
+        icon: Icon(Icons.inventory),
+        selectedIcon: Icon(Icons.inventory),
+        label: 'Reservas',
+  ),
+
+        NavigationDestination(
+        icon: Icon(Icons.person_outline),
+        selectedIcon: Icon(Icons.person),
+        label: 'Mi perfil',
+  ),
+],
+
       ),
     );
   }

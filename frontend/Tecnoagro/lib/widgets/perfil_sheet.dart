@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
+import 'package:frontend/pantallas/bienvenido.dart';
 import 'package:frontend/pantallas/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/pantallas/mis_reservas_screen.dart';
@@ -19,12 +20,31 @@ Future<void> abrirPerfil(
     );
     return;
   }
-  mostrarPerfil(context, prefs.getString('user_name') ?? 'Usuario', () async {
+ mostrarPerfil(
+  context,
+  prefs.getString('user_name') ?? 'Usuario',
+  () async {
+
     await prefs.remove('jwt_token');
     await prefs.remove('user_name');
     await prefs.remove('user_rol');
-    alCerrarSesion?.call();
-  });
+
+    if (alCerrarSesion != null) {
+      alCerrarSesion();
+    } else {
+
+      if (!context.mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const BienvenidoScreen(),
+        ),
+        (route) => false,
+      );
+    }
+  },
+);
 }
 
 /// Pregunta antes de cerrar sesión. Devuelve true si el usuario confirma.
@@ -186,7 +206,6 @@ void mostrarPerfil(
                               await onCerrarSesion();
                             } finally {
                               cerrando = false;
-                              if (sheet.mounted) Navigator.pop(sheet);
                             }
                           },
                     icon: cerrando

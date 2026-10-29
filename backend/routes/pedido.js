@@ -5,6 +5,7 @@ import {
   misPedidos,
   buscarPedidoPorCodigo,
   cambiarEstadoPedido,
+  listarReservas,
 } from '../controllers/pedido.js';
 import { verificarToken, verificarAdmin } from '../middleware/authMiddleware.js'; 
 
@@ -24,5 +25,8 @@ router.get('/pedidos/:id', verificarToken, obtenerPedidoUsuario);
 
 // PATCH - Cambiar estado (solo admin)
 router.patch('/pedidos/:id/estado', verificarToken, verificarAdmin, cambiarEstadoPedido);
+ 
+router.get('/pedidos',verificarToken, verificarAdmin , listarReservas
+);
 
 export default router;
