@@ -32,4 +32,10 @@ class AppColors {
     end: Alignment.bottomCenter,
     colors: [verdeMedio, verdeOscuro],
   );
+
+  //reservas
+  static const Color error = Color(0xFFD32F2F);
+  static const Color exito = verdePrimario;
+  static const Color pendiente = naranjaSol;
+  static const Color vencido = textoSecundario;
 }
