@@ -32,10 +32,12 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
   }
 
   void _aviso(String texto, {bool verCarrito = false}) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
         content: Text(texto),
+        duration: const Duration(seconds: 2),
         backgroundColor: AppColors.verdePrimario,
         behavior: SnackBarBehavior.floating,
         action: verCarrito
@@ -45,8 +47,9 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
                 onPressed: () => abrirCarrito(context),
               )
             : null,
-      ));
-  }
+      ),
+    );
+}
 
   void _cambiar(int delta) {
     final nueva = _cantidad + delta;
