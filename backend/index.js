@@ -10,6 +10,7 @@ import enfermedadRoutes from './routes/enfermedad.js';
 import chatRoutes from './routes/chat.js'; 
 import estadisticasRoutes from './routes/estadisticas.js';
 import { vencerReservas } from './controllers/pedido.js';
+import notificacionRoutes from './routes/notificacion.js';
 
 // CARGAR VARIABLES
 dotenv.config();
@@ -51,7 +52,9 @@ app.use('/api', chatRoutes);
 // Montaje de rutas públicas de autenticación
 app.use("/api/auth", authRoutes);
 
-app.use('/api', estadisticasRoutes); // usa el mismo prefijo que tus otras rutas
+app.use('/api', estadisticasRoutes); 
+
+app.use('/api', notificacionRoutes);
 
 // Manejador de errores 
 app.use((err, req, res, next) => {

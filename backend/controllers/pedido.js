@@ -107,6 +107,15 @@ export const crearPedidoConDetalles = async (req, res) => {
 
     const pedidoId = pedido[0].id;
 
+    await supabase
+      .from('notificaciones')
+      .insert({
+        usuario_id,
+        tipo: 'reserva',
+        titulo: 'Reserva realizada',
+        mensaje: `Tu reserva ${pedido[0].codigo} fue creada exitosamente`,
+      });
+
     const { error: errDet } = await supabase
       .from('detalle_pedidos')
       .insert(filas.map((f) => ({ ...f, pedido_id: pedidoId })));

@@ -15,6 +15,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/core/navegacion.dart';
 import 'package:frontend/pantallas/enfermedades.dart';
 import 'package:frontend/pantallas/busqueda.dart';
+import 'package:frontend/pantallas/notificaciones_screen.dart';
+import 'package:frontend/service/services/notificacion_service.dart';
+
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,17 +31,19 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _verdeSuave = Color(0xFFE6F2E6);
   String? _nombre; // null = no ha iniciado sesión
   final _productoService = ProductoService();
+final _notificacionService = NotificacionService();
+int _noLeidas = 0;
   List<ProductoModels> _productos = []; // el más nuevo va primero
   bool _cargando = true;
   String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    _cargarNombre();
-    _cargarProductos();
-  }
-
+@override
+void initState() {
+  super.initState();
+  _cargarNombre();
+  _cargarProductos();
+  _cargarNotificaciones();
+}
   Future<void> _cargarProductos() async {
     setState(() {
       _cargando = true;
@@ -54,6 +60,19 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) setState(() => _cargando = false);
     }
   }
+
+Future<void> _cargarNotificaciones() async {
+  try {
+    final cantidad =
+        await _notificacionService.obtenerCantidadNoLeidas();
+
+    if (!mounted) return;
+
+    setState(() {
+      _noLeidas = cantidad;
+    });
+  } catch (_) {}
+}
 
   TextStyle _estilo(double size, {Color? color, FontWeight peso = FontWeight.bold}) =>
       TextStyle(color: color ?? AppColors.textoPrincipal, fontSize: size, fontWeight: peso);
@@ -169,8 +188,49 @@ class _HomeScreenState extends State<HomeScreen> {
               Text('TecnoAgro', style: _estilo(22, color: AppColors.verdeOscuro)),
             ]),
           ),
-          _circulo(Icons.notifications_none, () => _proximamente('Las notificaciones')),
-        ]),
+Stack(
+  children: [
+    _circulo(
+      Icons.notifications_none,
+      () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                const NotificacionesScreen(),
+          ),
+        );
+
+        _cargarNotificaciones();
+      },
+    ),
+    if (_noLeidas > 0)
+      Positioned(
+        right: 0,
+        top: 0,
+        child: Container(
+          width: 18,
+          height: 18,
+          decoration: const BoxDecoration(
+            color: Colors.red,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              _noLeidas > 99
+                  ? '99+'
+                  : _noLeidas.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
+  ],
+)        ]),
       );
 
   @override

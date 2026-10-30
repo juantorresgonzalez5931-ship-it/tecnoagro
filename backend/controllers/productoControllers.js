@@ -7,6 +7,8 @@ import {
   eliminarProducto
 } from '../models/productoModel.js';
 
+import { supabase } from '../config/supabase.js';
+
 
 // GET - Listar todos los productos
 export const listarProductos = async (req, res) => {
@@ -92,6 +94,29 @@ export const crear = async (req, res) => {
       console.error('Error al crear producto:', error);
       return res.status(500).json({ error: 'Error al crear el producto' });
     }
+
+const producto = data[0];
+
+const { data: usuarios } = await supabase
+  .from('usuarios')
+  .select('id')
+  .eq('rol', 'usuario');
+
+if (usuarios?.length) {
+  const notificaciones = usuarios.map(
+    (usuario) => ({
+      usuario_id: usuario.id,
+      tipo: 'producto',
+      titulo: 'Nuevo producto disponible',
+      mensaje: `Nuevo producto: ${producto.nombre}`,
+      producto_id: producto.id,
+    }),
+  );
+
+  await supabase
+    .from('notificaciones')
+    .insert(notificaciones);
+}
 
     return res.status(201).json({ message: 'Producto creado', producto: data[0] });
   } catch (error) {
