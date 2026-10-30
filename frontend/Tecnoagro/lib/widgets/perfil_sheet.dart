@@ -4,6 +4,7 @@ import 'package:frontend/pantallas/bienvenido.dart';
 import 'package:frontend/pantallas/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/pantallas/mis_reservas_screen.dart';
+import 'package:frontend/service/services/carrito_service.dart';
 
 /// Mi Perfil: sin sesión abre el login; con sesión muestra el panel del perfil.
 /// [alCerrarSesion] se ejecuta después de borrar la sesión (por ejemplo, para refrescar el inicio).
@@ -20,31 +21,30 @@ Future<void> abrirPerfil(
     );
     return;
   }
- mostrarPerfil(
-  context,
-  prefs.getString('user_name') ?? 'Usuario',
-  () async {
-
+  mostrarPerfil(context, prefs.getString('user_name') ?? 'Usuario', () async {
     await prefs.remove('jwt_token');
     await prefs.remove('user_name');
     await prefs.remove('user_rol');
+    await prefs.remove('user_id');
+
+    CarritoService.instancia.vaciar();
 
     if (alCerrarSesion != null) {
       alCerrarSesion();
     } else {
-
       if (!context.mounted) return;
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const BienvenidoScreen(),
-        ),
-        (route) => false,
-      );
-    }
-  },
+Navigator.pop(context);
+
+Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(
+    builder: (_) => const BienvenidoScreen(),
+  ),
+  (route) => false,
 );
+    }
+  });
 }
 
 /// Pregunta antes de cerrar sesión. Devuelve true si el usuario confirma.
@@ -205,7 +205,11 @@ void mostrarPerfil(
                             try {
                               await onCerrarSesion();
                             } finally {
-                              cerrando = false;
+                              if (sheet.mounted) {
+                                setSheet(() {
+                                  cerrando = false;
+                                });
+                              }
                             }
                           },
                     icon: cerrando

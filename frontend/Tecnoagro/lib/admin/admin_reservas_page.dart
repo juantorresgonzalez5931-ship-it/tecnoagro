@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import '../core/colores.dart';
 import '../service/services/api_config.dart';
 
 class AdminReservasPage extends StatefulWidget {
@@ -133,19 +133,18 @@ class _AdminReservasPageState extends State<AdminReservasPage> {
   Color estadoColor(String estado) {
     switch (estado.toLowerCase()) {
       case 'pendiente':
-        return Colors.orange;
+        return AppColors.naranjaSol;
 
       case 'entregado':
-        return Colors.green;
+        return AppColors.verdePrimario;
 
       case 'cancelado':
-        return Colors.red;
-
+        return Colors.red.shade700;
       case 'vencido':
-        return Colors.grey;
+        return AppColors.textoSecundario;
 
       default:
-        return Colors.blue;
+        return AppColors.verdeMedio;
     }
   }
 
@@ -162,11 +161,12 @@ class _AdminReservasPageState extends State<AdminReservasPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Gestión de reservas',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            const Text(
+              'Gestión de reservas',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textoPrincipal,
               ),
             ),
 
@@ -217,6 +217,12 @@ class _AdminReservasPageState extends State<AdminReservasPage> {
 
             if (pedido != null)
               Card(
+                color: AppColors.blanco,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: AppColors.borde),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -250,7 +256,8 @@ class _AdminReservasPageState extends State<AdminReservasPage> {
 
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppColors.verdePrimario,
+                          foregroundColor: Colors.white,
                         ),
                         onPressed: pedido!['estado'] == 'cancelado'
                             ? null
@@ -348,10 +355,15 @@ class _AdminReservasPageState extends State<AdminReservasPage> {
                 itemCount: reservasFiltradas.length,
                 itemBuilder: (context, index) {
                   final reserva = reservasFiltradas[index];
-                  
 
                   return Card(
+                    color: AppColors.blanco,
+                    elevation: 2,
                     margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: AppColors.borde),
+                    ),
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundColor: estadoColor(reserva['estado']),
@@ -368,10 +380,25 @@ class _AdminReservasPageState extends State<AdminReservasPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(reserva['usuarios']?['nombre'] ?? 'Usuario'),
-                          Text(reserva['usuarios']?['email'] ?? ''),
+                          Text(
+                            reserva['usuarios']?['email'] ?? '',
+                            style: const TextStyle(
+                              color: AppColors.textoSecundario,
+                            ),
+                          ),
                           Text(reserva['telefono']?.toString() ?? ''),
-                          Text('Estado: ${reserva['estado']}'),
-                          Text('Total: \$${reserva['total']}'),
+                          Text(
+                            'Estado: ${reserva['estado']}',
+                            style: const TextStyle(
+                              color: AppColors.textoSecundario,
+                            ),
+                          ),
+                          Text(
+                            'Total: \$${reserva['total']}',
+                            style: const TextStyle(
+                              color: AppColors.textoSecundario,
+                            ),
+                          ),
                         ],
                       ),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),

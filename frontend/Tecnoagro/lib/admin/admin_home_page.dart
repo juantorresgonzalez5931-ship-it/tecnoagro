@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:frontend/pantallas/bienvenido.dart';
 import 'package:frontend/pantallas/enfermedades.dart';
-
+import 'package:frontend/service/services/carrito_service.dart';
 import 'package:frontend/admin/perfil_admin_page.dart';
 import '../core/colores.dart';
 import 'admin_dashboard_page.dart';
@@ -26,19 +26,22 @@ class _AdminHomePageState extends State<AdminHomePage> {
   int _indice = 0;
 
   Future<void> _cerrarSesion() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+  final prefs = await SharedPreferences.getInstance();
 
-    if (!mounted) return;
+  await prefs.clear();
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const BienvenidoScreen(),
-      ),
-      (route) => false,
-    );
-  }
+   CarritoService.instancia.vaciar();
+
+  if (!mounted) return;
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const BienvenidoScreen(),
+    ),
+    (route) => false,
+  );
+}
 
   @override
   Widget build(BuildContext context) {

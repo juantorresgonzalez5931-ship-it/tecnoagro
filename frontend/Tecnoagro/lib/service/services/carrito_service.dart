@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Un producto dentro del carrito, con la cantidad que el usuario quiere.
 class CarritoItem {
@@ -19,6 +21,28 @@ class CarritoItem {
     this.cantidad = 1,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'categoria': categoria,
+      'precio': precio,
+      'imagen': imagen,
+      'cantidad': cantidad,
+    };
+  }
+
+  factory CarritoItem.fromJson(Map<String, dynamic> json) {
+    return CarritoItem(
+      id: json['id'],
+      nombre: json['nombre'],
+      categoria: json['categoria'],
+      precio: json['precio'],
+      imagen: json['imagen'],
+      cantidad: json['cantidad'],
+    );
+  }
+
   num get subtotal => precio * cantidad;
 }
 
@@ -35,6 +59,50 @@ class CarritoService extends ChangeNotifier {
   static const int _maxPorProducto = 99;
 
   final List<CarritoItem> _items = [];
+  Future<void> guardarCarritoUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final userId = prefs.getInt('user_id');
+
+    if (userId == null) return;
+
+    await prefs.setString(
+      'carrito_$userId',
+      jsonEncode(_items.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<void> cargarCarritoUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final userId = prefs.getInt('user_id');
+
+    print('USER_ID CARGADO: $userId');
+
+    // SIEMPRE limpiar primero
+    _items.clear();
+
+    if (userId == null) {
+      notifyListeners();
+      return;
+    }
+
+    final carritoGuardado = prefs.getString('carrito_$userId');
+
+    print('USER_ID CARGADO: $userId');
+    print('KEY: carrito_$userId');
+
+    if (carritoGuardado == null) {
+      notifyListeners();
+      return;
+    }
+
+    final List<dynamic> lista = jsonDecode(carritoGuardado);
+
+    _items.addAll(lista.map((e) => CarritoItem.fromJson(e)));
+
+    notifyListeners();
+  }
 
   List<CarritoItem> get items => List.unmodifiable(_items);
   bool get vacio => _items.isEmpty;
@@ -52,8 +120,12 @@ class CarritoService extends ChangeNotifier {
       nuevo.cantidad = math.min(math.max(nuevo.cantidad, 1), _maxPorProducto);
       _items.add(nuevo);
     } else {
-      _items[i].cantidad = math.min(_items[i].cantidad + nuevo.cantidad, _maxPorProducto);
+      _items[i].cantidad = math.min(
+        _items[i].cantidad + nuevo.cantidad,
+        _maxPorProducto,
+      );
     }
+    guardarCarritoUsuario();
     notifyListeners();
   }
 
@@ -61,6 +133,7 @@ class CarritoService extends ChangeNotifier {
     final i = _items.indexWhere((e) => e.id == id);
     if (i == -1 || _items[i].cantidad >= _maxPorProducto) return;
     _items[i].cantidad++;
+    guardarCarritoUsuario();
     notifyListeners();
   }
 
@@ -69,16 +142,19 @@ class CarritoService extends ChangeNotifier {
     final i = _items.indexWhere((e) => e.id == id);
     if (i == -1 || _items[i].cantidad <= 1) return;
     _items[i].cantidad--;
+    guardarCarritoUsuario();
     notifyListeners();
   }
 
   void quitar(String id) {
     _items.removeWhere((e) => e.id == id);
+    guardarCarritoUsuario();
     notifyListeners();
   }
 
   void vaciar() {
     _items.clear();
+    guardarCarritoUsuario();
     notifyListeners();
   }
 }
