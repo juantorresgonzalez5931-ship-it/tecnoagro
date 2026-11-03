@@ -14,8 +14,9 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 
 const RECORDATORIO_ALCANCE =
-    'Recuerda: si la última pregunta del cliente no trata sobre TecnoAgro, sus productos o su atención, ' +
-    'no la respondas. Rechaza amablemente y redirige al catálogo.';
+    'Recuerda: rechaza SOLO si el cliente pide algo ajeno a TecnoAgro (matemáticas, política, chistes, etc.). ' +
+    'Respuestas cortas como "sí", "claro", "ok", "gracias" o saludos son continuación de la conversación: ' +
+    'respóndelas con normalidad según lo que se venía hablando.';
 
 // Arma el system prompt con el catálogo actual desde Supabase
 const construirSystemPrompt = async () => {
@@ -50,7 +51,9 @@ REGLAS DE ATENCIÓN:
 2. Da precios y detalles ÚNICAMENTE cuando el cliente pregunta explícitamente por ellos.
 3. Especifica los valores siempre en pesos colombianos ($ COP).
 4. No inventes productos ni precios que no estén en el catálogo; si no existe, dilo.
-5. Sé conciso y completa tus oraciones.`;
+5. Sé conciso y completa tus oraciones.
+6. Si el cliente acepta tu oferta con "sí", "claro", "dale" o similar, cumple lo que ofreciste (por ejemplo, mostrar el catálogo con sus precios).
+7. Los saludos, agradecimientos y despedidas siempre se responden con cortesía; no son temas fuera de alcance.`;
 };
 
 const llamarIA = async (historialMensajes) => {
