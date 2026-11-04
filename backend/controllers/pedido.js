@@ -9,6 +9,7 @@ import {
   obtenerPedidosVencidos,
 } from '../models/pedidoModel.js';
 import { obtenerPorId } from '../models/user.js';
+import { crearNotificacion } from '../models/notificacionModel.js';
 import { enviarConfirmacionPedido } from '../utils/sendEmail.js';
 
 const ESTADOS_DESTINO = ['entregado', 'cancelado', 'vencido'];
@@ -67,7 +68,7 @@ export const crearPedidoConDetalles = async (req, res) => {
     const ids = items.map((d) => d.producto_id);
     const { data: productos, error: errProd } = await supabase
       .from('productos')
-      .select('id, precio, stock')
+      .select('id, nombre, precio, stock')
       .in('id', ids);
 
     if (errProd) return res.status(500).json({ error: 'Error al consultar productos' });
@@ -107,15 +108,6 @@ export const crearPedidoConDetalles = async (req, res) => {
 
     const pedidoId = pedido[0].id;
 
-    await supabase
-      .from('notificaciones')
-      .insert({
-        usuario_id,
-        tipo: 'reserva',
-        titulo: 'Reserva realizada',
-        mensaje: `Tu reserva ${pedido[0].codigo} fue creada exitosamente`,
-      });
-
     const { error: errDet } = await supabase
       .from('detalle_pedidos')
       .insert(filas.map((f) => ({ ...f, pedido_id: pedidoId })));
@@ -133,6 +125,26 @@ export const crearPedidoConDetalles = async (req, res) => {
         .from('productos')
         .update({ stock: p.stock - f.cantidad })
         .eq('id', f.producto_id);
+    }
+
+    // Notificación para el usuario: reserva exitosa (si falla, la reserva ya quedó creada)
+    try {
+      const resumen = filas
+        .map((f) => {
+          const p = productos.find((x) => x.id === f.producto_id);
+          return `${f.cantidad} x ${p?.nombre ?? 'producto'}`;
+        })
+        .join(', ');
+      const { error: errNotif } = await crearNotificacion({
+        usuario_id,
+        tipo: 'reserva',
+        titulo: 'Reserva realizada',
+        mensaje: `Tu reserva ${pedido[0].codigo} fue creada exitosamente (${resumen}). Tienes ${HORAS_LIMITE} horas para recogerla.`,
+        leida: false,
+      });
+      if (errNotif) console.log('No se pudo crear la notificación:', errNotif.message);
+    } catch (e) {
+      console.log('No se pudo crear la notificación:', e.message);
     }
 
     // Correo de confirmacion (si falla, la reserva ya quedo creada)
@@ -198,6 +210,7 @@ export const misPedidos = async (req, res) => {
     });
   }
 };
+
 // ---------- Tienda: buscar por codigo ----------
 export const buscarPedidoPorCodigo = async (req, res) => {
   try {
@@ -261,9 +274,9 @@ export const vencerReservas = async () => {
   }
 
   return vencidos.length;
-
 };
-  export const listarReservas = async (req, res) => {
+
+export const listarReservas = async (req, res) => {
   try {
 
     const { data, error } = await supabase

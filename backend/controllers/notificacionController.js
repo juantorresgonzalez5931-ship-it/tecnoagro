@@ -1,5 +1,5 @@
 import {
-  listarNotificacionesUsuario,
+  obtenerPorUsuario,
   contarNoLeidas,
   marcarComoLeida,
 } from '../models/notificacionModel.js';
@@ -9,7 +9,7 @@ export const obtenerMisNotificaciones = async (req, res) => {
     const usuario_id = req.usuario.id;
 
     const { data, error } =
-      await listarNotificacionesUsuario(usuario_id);
+     await obtenerPorUsuario(usuario_id);
 
     if (error) {
       return res.status(500).json({

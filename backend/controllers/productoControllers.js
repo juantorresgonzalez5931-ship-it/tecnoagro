@@ -4,12 +4,10 @@ import {
   obtenerPorCategoria,
   crearProducto,
   actualizarProducto,
-  eliminarProducto,
-  desvincularDeEnfermedades,
-  archivarProducto
+  eliminarProducto
 } from '../models/productoModel.js';
-
 import { supabase } from '../config/supabase.js';
+import { crearNotificaciones } from '../models/notificacionModel.js';
 
 
 // GET - Listar todos los productos
@@ -75,9 +73,6 @@ export const crear = async (req, res) => {
     // Cloudinary almacena la URL segura en req.file.path
     const imagen_url = req.file ? req.file.path : null;
 
-
-       
-
     if (!nombre || !precio || !imagen_url) { //validacion: ahora verificamos que req.file haya entregado la url
       return res.status(400).json({ error: 'Nombre, precio e imagen_url son requeridos' });
     }
@@ -97,34 +92,35 @@ export const crear = async (req, res) => {
       return res.status(500).json({ error: 'Error al crear el producto' });
     }
 
-const producto = data[0];
+    // Avisar a los usuarios comunes que hay un producto nuevo (si falla, el producto ya quedó creado)
+    try {
+      const nuevo = data[0];
+      const { data: usuarios, error: errUsuarios } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('rol', 'usuario');
+      if (errUsuarios) throw errUsuarios;
 
-const { data: usuarios } = await supabase
-  .from('usuarios')
-  .select('id')
-  .eq('rol', 'usuario');
-
-if (usuarios?.length) {
-  const notificaciones = usuarios.map(
-    (usuario) => ({
-      usuario_id: usuario.id,
-      tipo: 'producto',
-      titulo: 'Nuevo producto disponible',
-      mensaje: `Nuevo producto: ${producto.nombre}`,
-      producto_id: producto.id,
-    }),
-  );
-
-  await supabase
-    .from('notificaciones')
-    .insert(notificaciones);
-}
+      const { error: errNotif } = await crearNotificaciones(
+        (usuarios || []).map((u) => ({
+          usuario_id: u.id,
+          tipo: 'producto',
+          titulo: 'Nuevo producto disponible',
+          mensaje: `Nuevo producto: ${nuevo.nombre}`,
+          producto_id: nuevo.id,
+          leida: false,
+        }))
+      );
+      if (errNotif) throw errNotif;
+    } catch (e) {
+      console.error('No se pudieron crear las notificaciones del producto nuevo:', e.message);
+    }
 
     return res.status(201).json({ message: 'Producto creado', producto: data[0] });
   } catch (error) {
     console.error('Error inesperado en crear:', error);
     return res.status(500).json({ error: error.message || 'Error desconocido' });
-}
+  }
 };
 
 // PUT/PATCH - Editar un producto existente
@@ -153,33 +149,18 @@ export const editar = async (req, res) => {
   }
 };
 
-// DELETE - Elimina el producto; si ya tiene pedidos, lo archiva
+// DELETE - Eliminar un producto
 export const eliminar = async (req, res) => {
   try {
     const { id } = req.params;
-
-    await desvincularDeEnfermedades(id);
     const { error } = await eliminarProducto(id);
 
-    if (!error) {
-      return res.status(200).json({ message: 'Producto eliminado' });
+    if (error) {
+      console.error('Error al eliminar producto:', error);
+      return res.status(500).json({ error: 'Error al eliminar el producto' });
     }
 
-    // 23503 = el producto aparece en detalle_pedidos
-    if (error.code === '23503') {
-      const { error: errorArchivo } = await archivarProducto(id);
-      if (errorArchivo) {
-        console.error('Error al archivar producto:', errorArchivo);
-        return res.status(500).json({ error: 'Error al archivar el producto' });
-      }
-      return res.status(200).json({
-        message: 'El producto tiene pedidos, se archivó en lugar de borrarse',
-        archivado: true
-      });
-    }
-
-    console.error('Error al eliminar producto:', error);
-    return res.status(500).json({ error: 'Error al eliminar el producto' });
+    return res.status(200).json({ message: 'Producto eliminado' });
   } catch (error) {
     console.error('Error inesperado en eliminar:', error);
     return res.status(500).json({ error: error.message });

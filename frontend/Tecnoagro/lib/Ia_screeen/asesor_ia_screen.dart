@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/core/colores.dart';
@@ -14,6 +15,15 @@ class _Mensaje {
   final bool esUsuario;
   final bool verCatalogo; // true = debajo se muestra el botón "Ver productos"
   _Mensaje(this.texto, this.esUsuario, {this.verCatalogo = false});
+}
+
+String _plano(String s) {
+  const con = 'áéíóúü', sin = 'aeiouu';
+  var t = s.toLowerCase().trim();
+  for (var i = 0; i < con.length; i++) {
+    t = t.replaceAll(con[i], sin[i]);
+  }
+  return t.replaceAll(RegExp(r'[^a-z0-9ñ ]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
 }
 
 class AsesorIAScreen extends StatefulWidget {
@@ -50,9 +60,6 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     _scroll.dispose();
     super.dispose();
   }
-
-  /// Lee id y nombre desde el JWT guardado al iniciar sesión.
-  /// Si no hay token, o está vencido o dañado, el usuario queda sin sesión.
   Future<void> _cargarSesion() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token') ?? '';
@@ -95,17 +102,43 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
       }
     });
   }
+  bool get _asesorOfrecioCatalogo {
+    final ultimo = _mensajes.where((m) => !m.esUsuario).lastOrNull;
+    return ultimo != null && (ultimo.verCatalogo || _plano(ultimo.texto).contains('catalogo'));
+  }
+
+  bool _quiereCatalogo(String texto) {
+    final t = _plano(texto);
+    final explicito = t.contains('catalogo') ||
+        RegExp(r'^(quiero )?ver (los |todos los )?productos$').hasMatch(t) ||
+        RegExp(r'^(muestrame|mostrar|mostrarme) (los |todos los )?productos$').hasMatch(t);
+    if (explicito) return true;
+    final afirma = RegExp(
+            r'^(si|claro|dale|ok|okay|listo|vale|de una|por favor|si claro|claro que si|si por favor|si quiero|quiero)$')
+        .hasMatch(t);
+    return afirma && _asesorOfrecioCatalogo;
+  }
 
   Future<void> _enviar([String? sugerencia]) async {
     final texto = (sugerencia ?? _controlador.text).trim();
     if (texto.isEmpty || _cargando || _usuarioId == null) return;
 
+    final pideCatalogo = _quiereCatalogo(texto);
     _controlador.clear();
     setState(() {
       _mensajes.add(_Mensaje(texto, true));
-      _cargando = true;
+      if (pideCatalogo) {
+        _mensajes.add(_Mensaje('¡Claro! Aquí tienes el catálogo de TecnoAgro.', false, verCatalogo: true));
+      } else {
+        _cargando = true;
+      }
     });
     _bajar();
+
+    if (pideCatalogo) {
+      abrirCatalogo(context);
+      return;
+    }
 
     try {
       final res = await http.post(
@@ -122,10 +155,12 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
 
       if (res.statusCode == 200) {
         _conversationId = data['conversation_id'].toString();
+        final respuesta = '${data['respuesta']}';
         setState(() => _mensajes.add(_Mensaje(
-              data['respuesta'],
+              respuesta,
               false,
-              verCatalogo: data['accion'] == 'ver_catalogo',
+              // Botón si el servidor lo pide o si la respuesta habla del catálogo.
+              verCatalogo: data['accion'] == 'ver_catalogo' || _plano(respuesta).contains('catalogo'),
             )));
       } else {
         _mostrarError(data['error'] ?? 'No se pudo obtener respuesta');
@@ -144,6 +179,20 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
       SnackBar(content: Text(mensaje), backgroundColor: Colors.red.shade700),
     );
   }
+
+  /// Estilo de las respuestas del asesor (negritas, listas y tablas).
+  MarkdownStyleSheet get _estiloMarkdown => MarkdownStyleSheet(
+        p: const TextStyle(color: AppColors.textoPrincipal, fontSize: 14.5, height: 1.4),
+        strong: const TextStyle(color: AppColors.textoPrincipal, fontWeight: FontWeight.bold),
+        em: const TextStyle(fontStyle: FontStyle.italic),
+        listBullet: const TextStyle(color: AppColors.verdePrimario, fontWeight: FontWeight.bold),
+        listIndent: 18,
+        blockSpacing: 8,
+        tableHead: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        tableBody: const TextStyle(color: AppColors.textoPrincipal, fontSize: 13),
+        tableBorder: TableBorder.all(color: AppColors.borde),
+        tableCellsPadding: const EdgeInsets.all(6),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -170,8 +219,6 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
       ),
     );
   }
-
-  /// Pantalla que se muestra cuando el usuario no ha iniciado sesión.
   Widget _sinSesion() {
     return Center(
       child: Padding(
@@ -271,7 +318,7 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
         }
         final m = _mensajes[i];
         final burbuja = Container(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.86),
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -279,10 +326,9 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
             borderRadius: BorderRadius.circular(14),
             border: m.esUsuario ? null : Border.all(color: AppColors.borde),
           ),
-          child: SelectableText(
-            m.texto,
-            style: TextStyle(color: m.esUsuario ? AppColors.blanco : AppColors.textoPrincipal),
-          ),
+          child: m.esUsuario
+              ? SelectableText(m.texto, style: const TextStyle(color: AppColors.blanco))
+              : MarkdownBody(data: m.texto, selectable: true, styleSheet: _estiloMarkdown),
         );
         return Align(
           alignment: m.esUsuario ? Alignment.centerRight : Alignment.centerLeft,
