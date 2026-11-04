@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/core/colores.dart';
+import 'package:frontend/core/navegacion.dart';
+import 'package:frontend/pantallas/login.dart';
 import 'package:frontend/service/services/api_config.dart';
 
 String get _chatUrl => '${ApiConfig.apiBaseUrl}/chat/mensaje';
@@ -10,7 +12,8 @@ String get _chatUrl => '${ApiConfig.apiBaseUrl}/chat/mensaje';
 class _Mensaje {
   final String texto;
   final bool esUsuario;
-  _Mensaje(this.texto, this.esUsuario);
+  final bool verCatalogo; // true = debajo se muestra el botón "Ver productos"
+  _Mensaje(this.texto, this.esUsuario, {this.verCatalogo = false});
 }
 
 class AsesorIAScreen extends StatefulWidget {
@@ -26,7 +29,8 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
   final List<_Mensaje> _mensajes = [];
   String? _conversationId;
   bool _cargando = false;
-  int? _usuarioId;
+  bool _cargandoSesion = true;
+  int? _usuarioId; // null = sin sesión
   String _nombre = '';
 
   static const _sugerencias = [
@@ -48,20 +52,39 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
   }
 
   /// Lee id y nombre desde el JWT guardado al iniciar sesión.
+  /// Si no hay token, o está vencido o dañado, el usuario queda sin sesión.
   Future<void> _cargarSesion() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token') ?? '';
-    if (token.isEmpty || !mounted) return;
-    try {
-      final payload = token.split('.')[1];
-      final datos = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(payload))));
-      setState(() {
-        _usuarioId = datos['id'];
-        _nombre = (datos['nombre'] ?? '').toString().split(' ').first;
-      });
-    } catch (_) {
-      _mostrarError('Sesión inválida, inicia sesión de nuevo');
+    int? id;
+    var nombre = '';
+    if (token.isNotEmpty) {
+      try {
+        final payload = token.split('.')[1];
+        final datos = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(payload))));
+        final exp = datos['exp'];
+        final vencido =
+            exp is int && DateTime.fromMillisecondsSinceEpoch(exp * 1000).isBefore(DateTime.now());
+        if (!vencido) {
+          id = datos['id'] is int ? datos['id'] : int.tryParse('${datos['id']}');
+          nombre = (datos['nombre'] ?? '').toString().split(' ').first;
+        }
+      } catch (_) {
+        id = null;
+      }
     }
+    if (!mounted) return;
+    setState(() {
+      _usuarioId = id;
+      _nombre = nombre;
+      _cargandoSesion = false;
+    });
+  }
+
+  Future<void> _irAlLogin() async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    if (!mounted) return;
+    _cargarSesion(); // al volver, revisa si ya inició sesión
   }
 
   void _bajar() {
@@ -94,12 +117,16 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
           'mensaje': texto,
         }),
       );
-      final data = jsonDecode(res.body);
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
       if (!mounted) return;
 
       if (res.statusCode == 200) {
         _conversationId = data['conversation_id'].toString();
-        setState(() => _mensajes.add(_Mensaje(data['respuesta'], false)));
+        setState(() => _mensajes.add(_Mensaje(
+              data['respuesta'],
+              false,
+              verCatalogo: data['accion'] == 'ver_catalogo',
+            )));
       } else {
         _mostrarError(data['error'] ?? 'No se pudo obtener respuesta');
       }
@@ -130,10 +157,55 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
         title: const Text('Asesor IA', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: SafeArea(
+        child: _cargandoSesion
+            ? const Center(child: CircularProgressIndicator(color: AppColors.verdePrimario))
+            : _usuarioId == null
+                ? _sinSesion()
+                : Column(
+                    children: [
+                      Expanded(child: _mensajes.isEmpty ? _bienvenida() : _lista()),
+                      _barraEscritura(),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  /// Pantalla que se muestra cuando el usuario no ha iniciado sesión.
+  Widget _sinSesion() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(child: _mensajes.isEmpty ? _bienvenida() : _lista()),
-            _barraEscritura(),
+            CircleAvatar(
+              radius: 36,
+              backgroundColor: const Color(0xFFE6F2E6),
+              child: Icon(Icons.lock_outline, size: 34, color: AppColors.verdePrimario),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Esta función solo está disponible después de iniciar sesión',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textoPrincipal),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Inicia sesión para hablar con el asesor inteligente de TecnoAgro.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textoSecundario),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _irAlLogin,
+                icon: const Icon(Icons.login),
+                label: const Text('Iniciar sesión', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
           ],
         ),
       ),
@@ -198,21 +270,37 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
           );
         }
         final m = _mensajes[i];
+        final burbuja = Container(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: m.esUsuario ? AppColors.verdePrimario : AppColors.blanco,
+            borderRadius: BorderRadius.circular(14),
+            border: m.esUsuario ? null : Border.all(color: AppColors.borde),
+          ),
+          child: SelectableText(
+            m.texto,
+            style: TextStyle(color: m.esUsuario ? AppColors.blanco : AppColors.textoPrincipal),
+          ),
+        );
         return Align(
           alignment: m.esUsuario ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: m.esUsuario ? AppColors.verdePrimario : AppColors.blanco,
-              borderRadius: BorderRadius.circular(14),
-              border: m.esUsuario ? null : Border.all(color: AppColors.borde),
-            ),
-            child: SelectableText(
-              m.texto,
-              style: TextStyle(color: m.esUsuario ? AppColors.blanco : AppColors.textoPrincipal),
-            ),
+          child: Column(
+            crossAxisAlignment: m.esUsuario ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              burbuja,
+              if (m.verCatalogo)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 6),
+                  child: FilledButton.icon(
+                    onPressed: () => abrirCatalogo(context),
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                    label: const Text('Ver productos'),
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.verdePrimario),
+                  ),
+                ),
+            ],
           ),
         );
       },

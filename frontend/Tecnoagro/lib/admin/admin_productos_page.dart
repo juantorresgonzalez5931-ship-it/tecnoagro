@@ -103,9 +103,13 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
     try {
       final res = await http.delete(_url('/${p['id']}'), headers: _headers);
       if (res.statusCode != 200 && res.statusCode != 204) throw res.statusCode;
+      var mensaje = 'Producto eliminado';
+      try {
+        mensaje = jsonDecode(res.body)['message'] ?? mensaje;
+      } catch (_) {}
       if (!mounted) return;
       setState(() => productos.removeWhere((x) => x['id'] == p['id']));
-      _aviso('Producto eliminado');
+      _aviso(mensaje);
     } catch (_) {
       _aviso('No se pudo eliminar el producto', error: true);
     }

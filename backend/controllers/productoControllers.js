@@ -4,7 +4,9 @@ import {
   obtenerPorCategoria,
   crearProducto,
   actualizarProducto,
-  eliminarProducto
+  eliminarProducto,
+  desvincularDeEnfermedades,
+  archivarProducto
 } from '../models/productoModel.js';
 
 import { supabase } from '../config/supabase.js';
@@ -151,18 +153,33 @@ export const editar = async (req, res) => {
   }
 };
 
-// DELETE - Eliminar un producto
+// DELETE - Elimina el producto; si ya tiene pedidos, lo archiva
 export const eliminar = async (req, res) => {
   try {
     const { id } = req.params;
+
+    await desvincularDeEnfermedades(id);
     const { error } = await eliminarProducto(id);
 
-    if (error) {
-      console.error('Error al eliminar producto:', error);
-      return res.status(500).json({ error: 'Error al eliminar el producto' });
+    if (!error) {
+      return res.status(200).json({ message: 'Producto eliminado' });
     }
 
-    return res.status(200).json({ message: 'Producto eliminado' });
+    // 23503 = el producto aparece en detalle_pedidos
+    if (error.code === '23503') {
+      const { error: errorArchivo } = await archivarProducto(id);
+      if (errorArchivo) {
+        console.error('Error al archivar producto:', errorArchivo);
+        return res.status(500).json({ error: 'Error al archivar el producto' });
+      }
+      return res.status(200).json({
+        message: 'El producto tiene pedidos, se archivó en lugar de borrarse',
+        archivado: true
+      });
+    }
+
+    console.error('Error al eliminar producto:', error);
+    return res.status(500).json({ error: 'Error al eliminar el producto' });
   } catch (error) {
     console.error('Error inesperado en eliminar:', error);
     return res.status(500).json({ error: error.message });
