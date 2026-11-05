@@ -24,6 +24,15 @@ class _FormularioState extends State<Formulario> {
   bool _cargando = false;
   bool _verPassword = false;
 
+  // Requisitos de la contraseña: texto visible -> regla
+  final _reglas = <String, RegExp>{
+    'Mínimo 8 caracteres': RegExp(r'.{8,}'),
+    'Una letra mayúscula': RegExp(r'[A-Z]'),
+    'Una letra minúscula': RegExp(r'[a-z]'),
+    'Un número': RegExp(r'[0-9]'),
+    'Un carácter especial (! @ # \$ % & * ...)': RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]'),
+  };
+
   @override
   void dispose() {
     for (final c in [_nombreCtrl, _fechaCtrl, _emailCtrl, _telefonoCtrl, _passwordCtrl]) {
@@ -68,16 +77,15 @@ class _FormularioState extends State<Formulario> {
       return 'Escribe un correo electrónico válido';
     }
     if (!RegExp(r'^\d{10}$').hasMatch(_telefonoCtrl.text.trim())) return 'El teléfono debe tener 10 dígitos';
-    if (_passwordCtrl.text.length < 6) return 'La contraseña debe tener al menos 6 caracteres';
+    if (_reglas.values.any((r) => !r.hasMatch(_passwordCtrl.text))) {
+      return 'La contraseña no cumple todos los requisitos';
+    }
     return null;
   }
 
   Future<void> _registrar() async {
     final error = _validar();
-    if (error != null) {
-      _mensaje(error, esError: true);
-      return;
-    }
+    if (error != null) return _mensaje(error, esError: true);
     setState(() => _cargando = true);
     try {
       final respuesta = await _userService.crearCuenta(
@@ -119,6 +127,30 @@ class _FormularioState extends State<Formulario> {
             suffixIcon: Icon(Icons.calendar_today_outlined, color: Colors.grey.shade500, size: 20),
           ),
         ),
+      );
+
+  Widget _requisitosPassword() => ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _passwordCtrl,
+        builder: (_, v, __) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          for (final r in _reglas.entries)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Row(children: [
+                Icon(
+                  r.value.hasMatch(v.text) ? Icons.check_circle : Icons.radio_button_unchecked,
+                  size: 16,
+                  color: r.value.hasMatch(v.text) ? AppColors.verdePrimario : Colors.grey.shade500,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(r.key,
+                      style: TextStyle(
+                          fontSize: 12.5,
+                          color: r.value.hasMatch(v.text) ? AppColors.verdePrimario : Colors.grey.shade600)),
+                ),
+              ]),
+            ),
+        ]),
       );
 
   @override
@@ -176,7 +208,7 @@ class _FormularioState extends State<Formulario> {
               ),
               AppTextField(
                 label: 'Contraseña',
-                hint: 'Mínimo 6 caracteres',
+                hint: 'Crea una contraseña segura',
                 controller: _passwordCtrl,
                 obscureText: !_verPassword,
                 textInputAction: TextInputAction.done,
@@ -187,6 +219,7 @@ class _FormularioState extends State<Formulario> {
                   onPressed: () => setState(() => _verPassword = !_verPassword),
                 ),
               ),
+              _requisitosPassword(),
             ]),
             const SizedBox(height: 26),
             ElevatedButton(
@@ -197,7 +230,8 @@ class _FormularioState extends State<Formulario> {
                   : const Text('REGISTRARSE'),
             ),
             const SizedBox(height: 16),
-            const BotonGoogle(),            const SizedBox(height: 22),
+            const BotonGoogle(),
+            const SizedBox(height: 22),
             Center(
               child: RichText(
                 text: TextSpan(
