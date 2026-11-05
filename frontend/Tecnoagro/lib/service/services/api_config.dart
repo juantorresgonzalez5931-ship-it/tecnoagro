@@ -1,8 +1,10 @@
+
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiConfig {
-  static const bool useRemoteServer = false;
+  // true = Render | false = Servidor local
+  static const bool useRemoteServer = true;
 
   static const String remoteServerUrl =
       'https://tecnoagro.onrender.com';
