@@ -174,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   child: const Text(
-                    '¿Olvidaste tu contrasena?',
+                    '¿Olvidaste tu contraseña?',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ),
