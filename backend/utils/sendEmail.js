@@ -3,7 +3,8 @@
 //
 // Variables de entorno necesarias en Render:
 //   BREVO_API_KEY    -> API key de Brevo (SMTP & API -> API Keys)
-//   EMAIL_FROM       -> correo remitente verificado en Brevo (Senders)
+//   EMAIL_FROM       -> correo remitente verificado en Brevo (Senders).
+//                       Si no existe, se usa EMAIL_USER (el Gmail de antes).
 //   EMAIL_FROM_NAME  -> (opcional) nombre visible, por defecto "TecnoAgro"
 
 const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
@@ -11,10 +12,10 @@ const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
 // Función genérica para enviar un correo electrónico
 export const enviarCorreo = async (destinatario, asunto, html) => {
   const apiKey = process.env.BREVO_API_KEY;
-  const remitente = process.env.EMAIL_FROM;
+  const remitente = process.env.EMAIL_FROM || process.env.EMAIL_USER;
 
   if (!apiKey || !remitente) {
-    throw new Error('Faltan BREVO_API_KEY o EMAIL_FROM en las variables de entorno');
+    throw new Error('Faltan BREVO_API_KEY o EMAIL_FROM/EMAIL_USER en las variables de entorno');
   }
 
   console.log(`[correo] Enviando a ${destinatario}: ${asunto}`);
