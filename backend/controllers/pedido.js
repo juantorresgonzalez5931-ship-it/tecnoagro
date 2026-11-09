@@ -154,7 +154,9 @@ export const crearPedidoConDetalles = async (req, res) => {
 
       try {
         const { data: usuario } = await obtenerPorId(usuario_id);
-        if (usuario?.email) {
+        if (!usuario?.email) {
+          console.log(`[correo] El usuario ${usuario_id} no tiene email, no se envía confirmación`);
+        } else {
           await enviarConfirmacionPedido(
             usuario.email,
             usuario.nombre,
