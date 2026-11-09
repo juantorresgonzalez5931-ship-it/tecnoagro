@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/sesion_expirada.dart';
 import 'package:frontend/pantallas/splashscreen.dart';
 import 'core/colores.dart';
 import 'core/tema.dart';
@@ -42,8 +43,10 @@ class TecnoAgroApp extends StatelessWidget {
           labelMedium: TextStyle(fontWeight: FontWeight.w500),
           labelSmall: TextStyle(fontWeight: FontWeight.w500),
           
+          
         ),
       ),
+      navigatorKey: navigatorKey,
       home: const Splashscreen(),
     );
   }

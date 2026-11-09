@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,23 +35,32 @@ class PedidoService {
       }).toList(),
     };
 
-    print('========== RESERVA ==========');
-    print('TOKEN: $token');
-    print('BODY ENVIADO:');
-    print(jsonEncode(body));
+    final url = '${ApiConfig.apiBaseUrl}/pedidos';
+    debugPrint('RESERVA -> POST $url');
+    debugPrint('BODY ENVIADO: ${jsonEncode(body)}');
 
-    final response = await http.post(
-      Uri.parse('${ApiConfig.apiBaseUrl}/pedidos'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(body),
-    );
+    final sw = Stopwatch()..start();
 
-    print('STATUS: ${response.statusCode}');
-    print('RESPONSE: ${response.body}');
-    print('=============================');
+    final http.Response response;
+    try {
+      response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
+    } catch (e) {
+      debugPrint('RESERVA falló a los ${sw.elapsedMilliseconds} ms: $e');
+      throw Exception('No se pudo conectar con el servidor. Intenta de nuevo.');
+    }
+
+    debugPrint('RESERVA respondió en ${sw.elapsedMilliseconds} ms');
+    debugPrint('STATUS: ${response.statusCode}');
+    debugPrint('RESPONSE: ${response.body}');
 
     final data = jsonDecode(response.body);
 
@@ -79,8 +89,7 @@ class PedidoService {
       },
     );
 
-    print('MIS PEDIDOS STATUS: ${response.statusCode}');
-    print('MIS PEDIDOS RESPONSE: ${response.body}');
+    debugPrint('MIS PEDIDOS STATUS: ${response.statusCode}');
 
     final data = jsonDecode(response.body);
 
@@ -94,27 +103,27 @@ class PedidoService {
   }
 
   Future<Map<String, dynamic>> obtenerPedido(
-  int id,
-) async {
-  final prefs = await SharedPreferences.getInstance();
+    int id,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
 
-  final token = prefs.getString('jwt_token') ?? '';
+    final token = prefs.getString('jwt_token') ?? '';
 
-  final response = await http.get(
-    Uri.parse('${ApiConfig.apiBaseUrl}/pedidos/$id'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode != 200) {
-    throw Exception(
-      data['error'] ?? 'Error al obtener reserva',
+    final response = await http.get(
+      Uri.parse('${ApiConfig.apiBaseUrl}/pedidos/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
     );
-  }
 
-  return data;
-}
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        data['error'] ?? 'Error al obtener reserva',
+      );
+    }
+
+    return data;
+  }
 }

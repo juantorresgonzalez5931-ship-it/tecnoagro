@@ -11,11 +11,14 @@ export const verificarToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).json({ error: 'Token inválido o expirado' });
-    }
+  return res.status(401).json({
+    error: 'La sesión expiró, por favor inicie sesión nuevamente',
+    code: 'TOKEN_EXPIRED'
+  });
+}
     req.usuario = decoded;
     next();
-  });
+  }); 
 };
 
 // Solo deja pasar si el usuario tiene rol admin (panel administrador)

@@ -37,25 +37,19 @@ const devolverStock = async (items) => {
 
 // ---------- Crear reserva ----------
 export const crearPedidoConDetalles = async (req, res) => {
+  const t0 = Date.now();
+  const lap = (etapa) => console.log(`[reserva] ${etapa}: ${Date.now() - t0} ms`);
   try {
-
-    console.log('=== CREAR PEDIDO ===');
-    console.log(req.body);
-    console.log(req.usuario);
-
+    lap('inicio (ya pasó verificarToken)');
     const { telefono, detalles } = req.body;
     const usuario_id = req.usuario.id;
-
-    console.log('telefono:', telefono);
-    console.log('detalles:', detalles);
-    console.log('esArray:', Array.isArray(detalles));
-    console.log('length:', detalles?.length);
 
     if (!Array.isArray(detalles) || detalles.length === 0) {
       return res.status(400).json({
         error: 'Datos incompletos'
       });
     }
+
     // Une productos repetidos sumando sus cantidades
     const items = [
       ...detalles.reduce(
@@ -71,6 +65,7 @@ export const crearPedidoConDetalles = async (req, res) => {
       .select('id, nombre, precio, stock')
       .in('id', ids);
 
+    lap('productos leídos');
     if (errProd) return res.status(500).json({ error: 'Error al consultar productos' });
 
     let total = 0;
@@ -101,72 +96,83 @@ export const crearPedidoConDetalles = async (req, res) => {
       fecha_limite,
     });
 
+    lap('pedido insertado');
     if (errorPedido || !pedido) {
       console.log('Error al crear pedido:', errorPedido);
       return res.status(500).json({ error: 'Error al crear la reserva' });
     }
 
-    const pedidoId = pedido[0].id;
+    const reserva = pedido[0];
+    const pedidoId = reserva.id;
 
     const { error: errDet } = await supabase
       .from('detalle_pedidos')
       .insert(filas.map((f) => ({ ...f, pedido_id: pedidoId })));
 
+    lap('detalles insertados');
     if (errDet) {
       console.log('Error al crear detalles:', errDet);
       await supabase.from('pedidos').delete().eq('id', pedidoId); // rollback manual
       return res.status(500).json({ error: 'Error al guardar los productos de la reserva' });
     }
 
-    // Descontar stock al reservar
-    for (const f of filas) {
-      const p = productos.find((x) => x.id === f.producto_id);
-      await supabase
-        .from('productos')
-        .update({ stock: p.stock - f.cantidad })
-        .eq('id', f.producto_id);
-    }
+    // Descontar stock al reservar (en paralelo)
+    await Promise.all(
+      filas.map((f) => {
+        const p = productos.find((x) => x.id === f.producto_id);
+        return supabase
+          .from('productos')
+          .update({ stock: p.stock - f.cantidad })
+          .eq('id', f.producto_id);
+      })
+    );
 
-    // Notificación para el usuario: reserva exitosa (si falla, la reserva ya quedó creada)
-    try {
-      const resumen = filas
-        .map((f) => {
-          const p = productos.find((x) => x.id === f.producto_id);
-          return `${f.cantidad} x ${p?.nombre ?? 'producto'}`;
-        })
-        .join(', ');
-      const { error: errNotif } = await crearNotificacion({
-        usuario_id,
-        tipo: 'reserva',
-        titulo: 'Reserva realizada',
-        mensaje: `Tu reserva ${pedido[0].codigo} fue creada exitosamente (${resumen}). Tienes ${HORAS_LIMITE} horas para recogerla.`,
-        leida: false,
-      });
-      if (errNotif) console.log('No se pudo crear la notificación:', errNotif.message);
-    } catch (e) {
-      console.log('No se pudo crear la notificación:', e.message);
-    }
+    lap('stock descontado');
 
-    // Correo de confirmacion (si falla, la reserva ya quedo creada)
-    try {
-      const { data: usuario } = await obtenerPorId(usuario_id);
-      if (usuario && usuario.email) {
-        await enviarConfirmacionPedido(
-          usuario.email,
-          usuario.nombre,
-          pedidoId,
-          total,
-          pedido[0].codigo,
-          pedido[0].fecha_limite
-        );
+    // Notificación + correo en segundo plano: no bloquean la respuesta.
+    // Si fallan, la reserva ya quedó creada.
+    (async () => {
+      try {
+        const resumen = filas
+          .map((f) => {
+            const p = productos.find((x) => x.id === f.producto_id);
+            return `${f.cantidad} x ${p?.nombre ?? 'producto'}`;
+          })
+          .join(', ');
+
+        const { error: errNotif } = await crearNotificacion({
+          usuario_id,
+          tipo: 'reserva',
+          titulo: 'Reserva realizada',
+          mensaje: `Tu reserva ${reserva.codigo} fue creada exitosamente (${resumen}). Tienes ${HORAS_LIMITE} horas para recogerla.`,
+          leida: false,
+        });
+        if (errNotif) console.log('No se pudo crear la notificación:', errNotif.message);
+      } catch (e) {
+        console.log('No se pudo crear la notificación:', e.message);
       }
-    } catch (e) {
-      console.log('No se pudo enviar el correo:', e.message);
-    }
 
+      try {
+        const { data: usuario } = await obtenerPorId(usuario_id);
+        if (usuario?.email) {
+          await enviarConfirmacionPedido(
+            usuario.email,
+            usuario.nombre,
+            pedidoId,
+            total,
+            reserva.codigo,
+            reserva.fecha_limite
+          );
+        }
+      } catch (e) {
+        console.log('No se pudo enviar el correo:', e.message);
+      }
+    })();
+
+    lap('respondiendo 201');
     return res.status(201).json({
       message: 'Reserva creada',
-      pedido: pedido[0],
+      pedido: reserva,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -180,7 +186,7 @@ export const obtenerPedidoUsuario = async (req, res) => {
     const { data, error } = await obtenerPedidoConDetalles(id);
     if (error || !data) return res.status(404).json({ error: 'Reserva no encontrada' });
 
-    if (req.usuario.rol !== 'admin' && data.usuario_id !== req.usuario.id) {
+    if (req.usuario.rol?.trim() !== 'admin' && data.usuario_id !== req.usuario.id) {
       return res.status(403).json({ error: 'No tienes acceso a esta reserva' });
     }
 
