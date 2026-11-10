@@ -11,8 +11,7 @@ import chatRoutes from './routes/chat.js';
 import estadisticasRoutes from './routes/estadisticas.js';
 import { vencerReservas } from './controllers/pedido.js';
 import notificacionRoutes from './routes/notificacion.js';
-console.log('[env] BREVO_API_KEY definida:', !!process.env.BREVO_API_KEY);
-console.log('[env] EMAIL_FROM definida:', !!process.env.EMAIL_FROM);
+
 
 // CARGAR VARIABLES
 dotenv.config();

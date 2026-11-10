@@ -1,60 +1,60 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:frontend/lib/pantallas/login.dart';
-import 'package:frontend/lib/service/services/carrito_service.dart';
-import 'package:http/http.dart' as http;
-import 'package:frontend/service/services/sesion_service.dart';
-// import 'package:frontend/.../carrito_service.dart';   // ajusta la ruta
-// import 'package:frontend/.../login_screen.dart';      // ajusta la ruta
+import 'package:shared_preferences/shared_preferences.dart';
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-bool _dialogoAbierto = false;
+import 'package:frontend/service/services/carrito_service.dart';
+// OJO: ajusta este import al archivo real de tu pantalla de login
+// (la que contiene la clase LoginScreen).
+import 'package:frontend/pantallas/login.dart';
 
-/// Devuelve true si la respuesta fue de sesión expirada (y ya mostró el diálogo).
-Future<bool> revisarSesionExpirada(http.Response response) async {
-  if (response.statusCode != 401) return false;
+/// Llave global del Navigator. Se conecta en main.dart:
+///   MaterialApp(navigatorKey: navegadorGlobal, ...)
+final GlobalKey<NavigatorState> navegadorGlobal = GlobalKey<NavigatorState>();
 
-  try {
-    final body = jsonDecode(response.body);
-    if (body['code'] != 'TOKEN_EXPIRED' && body['code'] != 'TOKEN_MISSING') {
-      return false;
-    }
-  } catch (_) {
-    return false;
-  }
-
-  await _mostrarDialogoSesionExpirada();
-  return true;
+/// Se lanza cuando el servidor responde 401 (token vencido o inválido).
+/// Las pantallas la usan para NO mostrar el mensaje rojo, porque el manejo
+/// de la sesión ya se hizo solo.
+class SesionExpiradaException implements Exception {
+  @override
+  String toString() => 'La sesión expiró, por favor inicia sesión nuevamente';
 }
 
-Future<void> _mostrarDialogoSesionExpirada() async {
-  if (_dialogoAbierto) return;
-  final contexto = navigatorKey.currentContext;
-  if (contexto == null) return;
+bool _redirigiendo = false;
 
-  _dialogoAbierto = true;
+/// Borra la sesión guardada, limpia el carrito en memoria y lleva al login.
+/// Se puede llamar desde cualquier servicio, sin necesidad de un BuildContext.
+Future<void> manejarSesionExpirada() async {
+  if (_redirigiendo) return; // evita ejecutarse varias veces seguidas
+  _redirigiendo = true;
 
-  await showDialog(
-    context: contexto,
-    barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      title: const Text('La sesión expiró'),
-      content: const Text('Vuelve a iniciar sesión para continuar.'),
-      actions: [
-        ElevatedButton(
-          onPressed: () async {
-            await SesionService.cerrarSesion();
-            CarritoService.instancia.vaciar();
-            navigatorKey.currentState!.pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const LoginScreen()), // tu pantalla de login
-              (ruta) => false,
-            );
-          },
-          child: const Text('Iniciar sesión'),
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('jwt_token');
+    await prefs.remove('user_name');
+    await prefs.remove('user_rol');
+    await prefs.remove('user_id');
+
+    // Sin user_id, esto vacía el carrito EN MEMORIA y no toca el guardado
+    // en disco: al volver a entrar, el carrito del usuario se recupera.
+    await CarritoService.instancia.cargarCarritoUsuario();
+
+    navegadorGlobal.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+
+    // Aviso amable (no rojo) ya en la pantalla de login.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = navegadorGlobal.currentContext;
+      if (ctx == null) return;
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        const SnackBar(
+          content: Text('Tu sesión expiró. Inicia sesión de nuevo para continuar.'),
+          behavior: SnackBarBehavior.floating,
         ),
-      ],
-    ),
-  );
-
-  _dialogoAbierto = false;
+      );
+    });
+  } finally {
+    // Pequeña pausa para no redirigir dos veces por peticiones simultáneas.
+    Future.delayed(const Duration(seconds: 2), () => _redirigiendo = false);
+  }
 }

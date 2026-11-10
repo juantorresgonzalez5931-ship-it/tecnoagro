@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
 import { crearUsuario, obtenerPorEmail } from '../models/user.js';
 
+// Duración de la sesión. Cámbiala aquí si quieres más o menos tiempo.
+const DURACION_TOKEN = '7d';
+
 export const registro = async (req, res) => {
     try {
         const { nombre, email, password, telefono } = req.body;
@@ -78,15 +81,18 @@ export const login = async (req, res) => {
 
         // Ya no se exige verificación por correo para iniciar sesión.
 
+        // La columna `rol` puede venir con espacios al final; se limpia aquí.
+        const rol = typeof usuario.rol === 'string' ? usuario.rol.trim() : usuario.rol;
+
         const token = jwt.sign(
             {
                 id: usuario.id,
                 nombre: usuario.nombre,
                 email: usuario.email,
-                rol: usuario.rol
+                rol
             },
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: DURACION_TOKEN }
         );
 
         return res.status(200).json({
@@ -96,7 +102,7 @@ export const login = async (req, res) => {
                 id: usuario.id,
                 nombre: usuario.nombre,
                 email: usuario.email,
-                rol: usuario.rol
+                rol
             }
         });
 
