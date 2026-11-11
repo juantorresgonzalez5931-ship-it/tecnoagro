@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:frontend/core/sesion_expirada.dart';
 import 'package:http/http.dart' as http;
 import 'api_http.dart';
 import '/models/producto_models.dart';
@@ -78,10 +77,10 @@ class ProductoService {
 
       if (response.statusCode == 200 || response.statusCode == 201) return;
 
-      // Token inválido o expirado: muestra el diálogo "La sesión expiró"
-      if (await revisarSesionExpirada(response)) {
-        throw Exception('La sesión expiró');
-      }
+      // // Token inválido o expirado: muestra el diálogo "La sesión expiró"
+      // if (await revisarSesionExpirada(response)) {
+      //   throw Exception('La sesión expiró');
+      // }
 
       final contentType = response.headers['content-type'] ?? '';
       if (contentType.contains('application/json')) {
