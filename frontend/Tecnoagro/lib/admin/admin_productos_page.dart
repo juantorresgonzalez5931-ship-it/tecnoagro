@@ -105,7 +105,8 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
       if (res.statusCode != 200 && res.statusCode != 204) throw res.statusCode;
       var mensaje = 'Producto eliminado';
       try {
-        mensaje = jsonDecode(res.body)['message'] ?? mensaje;
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        if (data is Map && data['message'] != null) mensaje = '${data['message']}';
       } catch (_) {}
       if (!mounted) return;
       setState(() => productos.removeWhere((x) => x['id'] == p['id']));
@@ -117,21 +118,19 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
 
   // ───────────── Formulario (crear y editar, con foto) ─────────────
 
-  /// Abre el diálogo y, si se acepta, guarda en el servidor.
-  /// Los controladores viven dentro del diálogo (_DialogoProducto), no aquí.
   Future<void> _formulario([Map<String, dynamic>? producto]) async {
     final editando = producto != null;
-    final datos = await showDialog<_DatosProducto>(
+    final resultado = await showDialog<_DatosProducto>(
       context: context,
       builder: (_) => _DialogoProducto(producto: producto),
     );
-    if (datos == null) return;
+    if (resultado == null) return;
 
     final ok = await _guardar(
       editando ? 'PUT' : 'POST',
       editando ? '/${producto['id']}' : '',
-      datos.campos,
-      datos.imagen,
+      resultado.campos,
+      resultado.imagen,
     );
     if (ok) {
       _aviso(editando ? 'Producto actualizado' : 'Producto creado');
@@ -211,16 +210,15 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
   }
 }
 
-/// Lo que devuelve el diálogo cuando se pulsa "Guardar".
+/// Lo que devuelve el cuadro de diálogo al guardar.
 class _DatosProducto {
   final Map<String, String> campos;
   final XFile? imagen;
   const _DatosProducto(this.campos, this.imagen);
 }
 
-/// Diálogo para crear o editar un producto.
-/// Es un widget propio para que sus controladores se destruyan cuando el diálogo
-/// ya terminó de cerrarse (así no aparece el error de "controller used after being disposed").
+/// Cuadro de diálogo para crear/editar. Maneja sus propios controllers
+/// (se liberan cuando el diálogo se destruye, no antes).
 class _DialogoProducto extends StatefulWidget {
   final Map<String, dynamic>? producto;
   const _DialogoProducto({this.producto});
@@ -230,35 +228,21 @@ class _DialogoProducto extends StatefulWidget {
 }
 
 class _DialogoProductoState extends State<_DialogoProducto> {
+  late final bool editando = widget.producto != null;
+  late final _nombre = TextEditingController(text: '${widget.producto?['nombre'] ?? ''}');
+  late final _precio = TextEditingController(text: '${widget.producto?['precio'] ?? ''}');
+  late final _stock = TextEditingController(text: '${widget.producto?['stock'] ?? ''}');
+  late final _principio = TextEditingController(text: '${widget.producto?['principio_activo'] ?? ''}');
+  late final _descripcion = TextEditingController(text: '${widget.producto?['descripcion'] ?? ''}');
+  late String? _categoria = widget.producto?['categoria']?.toString();
+  late final String? _fotoActual = (widget.producto?['imagen_url'] ?? widget.producto?['imagen'])?.toString();
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nombre;
-  late final TextEditingController _precio;
-  late final TextEditingController _stock;
-  late final TextEditingController _descripcion;
-  late final List<String> _opciones;
-  String? _categoria;
-  String? _fotoActual;
   XFile? _imagen;
   bool _falta = false;
 
-  bool get _editando => widget.producto != null;
-
-  @override
-  void initState() {
-    super.initState();
-    final p = widget.producto;
-    _nombre = TextEditingController(text: '${p?['nombre'] ?? ''}');
-    _precio = TextEditingController(text: '${p?['precio'] ?? ''}');
-    _stock = TextEditingController(text: '${p?['stock'] ?? ''}');
-    _descripcion = TextEditingController(text: '${p?['descripcion'] ?? ''}');
-    _categoria = p?['categoria']?.toString();
-    _opciones = {..._categorias, if (_categoria != null) _categoria!}.toList();
-    _fotoActual = (p?['imagen_url'] ?? p?['imagen'])?.toString();
-  }
-
   @override
   void dispose() {
-    for (final c in [_nombre, _precio, _stock, _descripcion]) {
+    for (final c in [_nombre, _precio, _stock, _principio, _descripcion]) {
       c.dispose();
     }
     super.dispose();
@@ -266,7 +250,7 @@ class _DialogoProductoState extends State<_DialogoProducto> {
 
   Future<void> _elegirImagen() async {
     final foto = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (foto != null && mounted) {
+    if (foto != null) {
       setState(() {
         _imagen = foto;
         _falta = false;
@@ -276,7 +260,7 @@ class _DialogoProductoState extends State<_DialogoProducto> {
 
   void _aceptar() {
     if (!_formKey.currentState!.validate()) return;
-    if (!_editando && _imagen == null) {
+    if (!editando && _imagen == null) {
       setState(() => _falta = true);
       return;
     }
@@ -286,6 +270,7 @@ class _DialogoProductoState extends State<_DialogoProducto> {
         'nombre': _nombre.text.trim(),
         'precio': _precio.text.trim().replaceAll(',', '.'),
         'stock': _stock.text.trim(),
+        'principio_activo': _principio.text.trim(),
         'descripcion': _descripcion.text.trim(),
         if (_categoria != null) 'categoria': _categoria!,
       }, _imagen),
@@ -294,8 +279,9 @@ class _DialogoProductoState extends State<_DialogoProducto> {
 
   @override
   Widget build(BuildContext context) {
+    final opciones = {..._categorias, if (_categoria != null) _categoria!}.toList();
     return AlertDialog(
-      title: Text(_editando ? 'Editar producto' : 'Nuevo producto'),
+      title: Text(editando ? 'Editar producto' : 'Nuevo producto'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -316,16 +302,20 @@ class _DialogoProductoState extends State<_DialogoProducto> {
               controller: _stock,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Stock'),
-              validator: (v) {
-                final n = int.tryParse((v ?? '').trim());
-                return n == null || n < 0 ? 'Ingresa un stock válido' : null;
-              },
             ),
             DropdownButtonFormField<String>(
               initialValue: _categoria,
               decoration: const InputDecoration(labelText: 'Categoría'),
-              items: [for (final o in _opciones) DropdownMenuItem(value: o, child: Text(o))],
+              items: [for (final o in opciones) DropdownMenuItem(value: o, child: Text(o))],
               onChanged: (v) => _categoria = v,
+            ),
+            TextFormField(
+              controller: _principio,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Principio activo (opcional)',
+                hintText: 'Ej: Glifosato',
+              ),
             ),
             TextFormField(
               controller: _descripcion,
@@ -355,8 +345,7 @@ class _DialogoProductoState extends State<_DialogoProducto> {
             if (_falta)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text('La imagen es obligatoria',
-                    style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                child: Text('La imagen es obligatoria', style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
               ),
           ]),
         ),
@@ -386,6 +375,7 @@ class _TarjetaProducto extends StatelessWidget {
             ? Colors.orange.shade800
             : AppColors.verdePrimario;
     final imagen = (producto['imagen_url'] ?? producto['imagen'])?.toString();
+    final principio = '${producto['principio_activo'] ?? ''}'.trim();
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -417,6 +407,11 @@ class _TarjetaProducto extends StatelessWidget {
                 style: TextStyle(color: AppColors.textoPrincipal, fontWeight: FontWeight.bold, fontSize: 15)),
             Text('${producto['categoria'] ?? 'Sin categoría'}',
                 style: TextStyle(color: AppColors.textoSecundario, fontSize: 12.5)),
+            if (principio.isNotEmpty)
+              Text('Principio activo: $principio',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: AppColors.textoSecundario, fontSize: 12)),
             const SizedBox(height: 6),
             Row(children: [
               Text(_dinero(producto['precio']),

@@ -1,7 +1,10 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
-import { crearUsuario, obtenerPorEmail } from '../models/user.js';
+import { crearUsuario, obtenerPorEmail, actualizarUsuario, eliminarUsuario } from '../models/user.js';
+
+// Duración de la sesión. Cámbiala aquí si quieres más o menos tiempo.
+const DURACION_TOKEN = '7d';
 
 export const registro = async (req, res) => {
     try {
@@ -78,15 +81,18 @@ export const login = async (req, res) => {
 
         // Ya no se exige verificación por correo para iniciar sesión.
 
+        // La columna `rol` puede venir con espacios al final; se limpia aquí.
+        const rol = typeof usuario.rol === 'string' ? usuario.rol.trim() : usuario.rol;
+
         const token = jwt.sign(
             {
                 id: usuario.id,
                 nombre: usuario.nombre,
                 email: usuario.email,
-                rol: usuario.rol
+                rol
             },
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: DURACION_TOKEN }
         );
 
         return res.status(200).json({
@@ -96,7 +102,7 @@ export const login = async (req, res) => {
                 id: usuario.id,
                 nombre: usuario.nombre,
                 email: usuario.email,
-                rol: usuario.rol
+                rol
             }
         });
 
@@ -166,5 +172,67 @@ export const verificarCuenta = async (req, res) => {
     } catch (error) {
         console.error("Error en verificarCuenta:", error);
         return res.status(500).json({ error: error.message });
+    }
+};
+
+// Actualiza únicamente los datos permitidos del usuario autenticado.
+export const actualizarMiPerfil = async (req, res) => {
+    try {
+        const id = req.usuario?.id;
+        if (!id) return res.status(401).json({ error: "Sesión inválida" });
+
+        const nombre = typeof req.body?.nombre === "string" ? req.body.nombre.trim() : "";
+        const telefono = typeof req.body?.telefono === "string" ? req.body.telefono.trim() : "";
+
+        if (!nombre) {
+            return res.status(400).json({ error: "El nombre es obligatorio" });
+        }
+        if (telefono && !/^[0-9]{7,15}$/.test(telefono)) {
+            return res.status(400).json({ error: "El teléfono no es válido" });
+        }
+
+        const { data, error } = await actualizarUsuario(id, { nombre, telefono });
+        if (error) {
+            console.error("Error al actualizar perfil:", error);
+            return res.status(500).json({ error: "No se pudo actualizar el perfil" });
+        }
+        if (!data) return res.status(404).json({ error: "Usuario no encontrado" });
+
+        return res.status(200).json({
+            message: "Información personal actualizada",
+            usuario: data
+        });
+    } catch (error) {
+        console.error("Error en actualizarMiPerfil:", error);
+        return res.status(500).json({ error: "Error interno al actualizar el perfil" });
+    }
+};
+
+// Elimina exclusivamente la cuenta asociada al token presentado.
+export const eliminarMiCuenta = async (req, res) => {
+    try {
+        const id = req.usuario?.id;
+        if (!id) return res.status(401).json({ error: "Sesión inválida" });
+
+        const { data: usuario, error: errorUsuario } = await obtenerPorEmail(req.usuario.email);
+        if (errorUsuario || !usuario || String(usuario.id) !== String(id)) {
+            return res.status(404).json({ error: "No se encontró la cuenta autenticada" });
+        }
+
+        const { data, error } = await eliminarUsuario(id);
+        if (error) {
+            console.error("Error al eliminar cuenta propia:", error);
+            return res.status(409).json({
+                error: "No fue posible eliminar la cuenta. Puede tener información relacionada que debe gestionarse primero."
+            });
+        }
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: "No se encontró la cuenta para eliminar" });
+        }
+
+        return res.status(200).json({ message: "Tu cuenta fue eliminada correctamente" });
+    } catch (error) {
+        console.error("Error en eliminarMiCuenta:", error);
+        return res.status(500).json({ error: "Error interno al eliminar la cuenta" });
     }
 };

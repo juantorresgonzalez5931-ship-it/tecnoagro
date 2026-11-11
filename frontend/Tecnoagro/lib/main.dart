@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/sesion_expirada.dart';
 import 'package:frontend/pantallas/splashscreen.dart';
 import 'core/colores.dart';
 import 'core/tema.dart';
@@ -14,7 +15,6 @@ class TecnoAgroApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      
       title: 'TecnoAgro',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -41,9 +41,9 @@ class TecnoAgroApp extends StatelessWidget {
           labelLarge: TextStyle(fontWeight: FontWeight.w500),
           labelMedium: TextStyle(fontWeight: FontWeight.w500),
           labelSmall: TextStyle(fontWeight: FontWeight.w500),
-          
         ),
       ),
+      navigatorKey: navegadorGlobal,
       home: const Splashscreen(),
     );
   }

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/pantallas/bienvenido.dart';
 import 'package:frontend/pantallas/login.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/pantallas/mis_reservas_screen.dart';
+import 'package:frontend/pantallas/editar_perfil_screen.dart';
+import 'package:frontend/pantallas/manual_usuario_screen.dart';
 import 'package:frontend/service/services/carrito_service.dart';
+import 'package:frontend/service/services/perfil_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Mi Perfil: sin sesión abre el login; con sesión muestra el panel del perfil.
-/// [alCerrarSesion] se ejecuta después de borrar la sesión (por ejemplo, para refrescar el inicio).
+/// Mi Perfil: conserva el acceso al login cuando no hay sesión.
 Future<void> abrirPerfil(
   BuildContext context, {
   VoidCallback? alCerrarSesion,
@@ -21,67 +23,54 @@ Future<void> abrirPerfil(
     );
     return;
   }
+
   mostrarPerfil(context, prefs.getString('user_name') ?? 'Usuario', () async {
     await prefs.remove('jwt_token');
     await prefs.remove('user_name');
     await prefs.remove('user_rol');
     await prefs.remove('user_id');
-
     CarritoService.instancia.vaciar();
 
     if (alCerrarSesion != null) {
       alCerrarSesion();
     } else {
       if (!context.mounted) return;
-
-Navigator.pop(context);
-
-Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const BienvenidoScreen(),
-  ),
-  (route) => false,
-);
+      Navigator.pop(context);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const BienvenidoScreen()),
+        (route) => false,
+      );
     }
   });
 }
 
-/// Pregunta antes de cerrar sesión. Devuelve true si el usuario confirma.
 Future<bool> _confirmarCierre(BuildContext context) async {
   final confirmado = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(
-        'Cerrar sesión',
-        style: TextStyle(
-          color: AppColors.textoPrincipal,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      content: Text(
-        '¿Seguro que quieres cerrar sesión?',
-        style: TextStyle(color: AppColors.textoSecundario),
-      ),
+      title: Text('Cerrar sesión',
+          style: TextStyle(
+            color: AppColors.textoPrincipal,
+            fontWeight: FontWeight.bold,
+          )),
+      content: Text('¿Seguro que quieres cerrar sesión?',
+          style: TextStyle(color: AppColors.textoSecundario)),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: Text(
-            'Cancelar',
-            style: TextStyle(color: AppColors.textoSecundario),
-          ),
+          child: Text('Cancelar',
+              style: TextStyle(color: AppColors.textoSecundario)),
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(
-            'Cerrar sesión',
-            style: TextStyle(
-              color: Colors.red.shade700,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          child: Text('Cerrar sesión',
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontWeight: FontWeight.bold,
+              )),
         ),
       ],
     ),
@@ -89,8 +78,53 @@ Future<bool> _confirmarCierre(BuildContext context) async {
   return confirmado == true;
 }
 
-/// Panel de "Mi Perfil" para el usuario con sesión iniciada.
-/// [onCerrarSesion] borra los datos guardados y refresca la pantalla.
+Future<bool> _confirmarEliminacion(BuildContext context) async {
+  final controller = TextEditingController();
+  final confirmado = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Text('Eliminar cuenta'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Esta acción es permanente. Se cerrará tu sesión y se solicitará '
+            'al servidor eliminar tu cuenta. Para confirmar, escribe ELIMINAR.',
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: controller,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'Escribe ELIMINAR',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(
+            ctx,
+            controller.text.trim().toUpperCase() == 'ELIMINAR',
+          ),
+          child: const Text('Eliminar cuenta',
+              style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return confirmado == true;
+}
+
 void mostrarPerfil(
   BuildContext context,
   String nombre,
@@ -98,24 +132,24 @@ void mostrarPerfil(
 ) {
   final inicial = nombre.trim().isEmpty ? '?' : nombre.trim()[0].toUpperCase();
   bool cerrando = false;
+  bool eliminando = false;
 
   showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
     backgroundColor: AppColors.fondoCrema,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (sheet) => StatefulBuilder(
       builder: (_, setSheet) => PopScope(
-        canPop:
-            !cerrando, // no se puede cerrar el panel mientras se cierra la sesión
+        canPop: !cerrando && !eliminando,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Barra de arrastre
                 Container(
                   width: 40,
                   height: 4,
@@ -124,117 +158,143 @@ void mostrarPerfil(
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-                const SizedBox(height: 24),
-                // Avatar con la inicial del usuario
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.verdePrimario,
-                  child: Text(
-                    inicial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  nombre,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textoPrincipal,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Mi perfil',
-                  style: TextStyle(
-                    color: AppColors.textoSecundario,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Divider(color: AppColors.borde, height: 1),
-
                 const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.inventory_2_outlined),
-                    label: const Text(
-                      'MIS RESERVAS',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.verdePrimario,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(sheet);
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MisReservasScreen(),
-                        ),
-                      );
-                    },
-                  ),
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: AppColors.verdePrimario,
+                  child: Text(inicial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      )),
                 ),
-
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton.icon(
-                    onPressed: cerrando
-                        ? null
-                        : () async {
-                            final ok = await _confirmarCierre(sheet);
-                            if (!ok || !sheet.mounted) return;
-                            setSheet(() => cerrando = true);
-                            try {
-                              await onCerrarSesion();
-                            } finally {
-                              if (sheet.mounted) {
-                                setSheet(() {
-                                  cerrando = false;
-                                });
-                              }
-                            }
-                          },
-                    icon: cerrando
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.red.shade700,
-                            ),
-                          )
-                        : const Icon(Icons.logout_rounded),
-                    label: const Text(
-                      'CERRAR SESIÓN',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade700,
-                      backgroundColor: Colors.red.shade50,
-                      side: BorderSide(color: Colors.red.shade200),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 10),
+                Text(nombre,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textoPrincipal,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    )),
+                const SizedBox(height: 3),
+                Text('Mi perfil',
+                    style: TextStyle(
+                      color: AppColors.textoSecundario,
+                      fontSize: 13,
+                    )),
+                const SizedBox(height: 18),
+                Divider(color: AppColors.borde, height: 1),
+                const SizedBox(height: 10),
+                _tituloGrupo('GESTIÓN DE CUENTA'),
+                _opcion(
+                  icono: Icons.person_outline_rounded,
+                  titulo: 'Editar información personal',
+                  subtitulo: 'Actualiza tus datos personales',
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EditarPerfilScreen(),
                       ),
-                    ),
-                  ),
+                    );
+                  },
+                ),
+                _opcion(
+                  icono: Icons.inventory_2_outlined,
+                  titulo: 'Mis reservas',
+                  subtitulo: 'Consulta tus pedidos y reservas',
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MisReservasScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 12),
+                _tituloGrupo('AYUDA Y SOPORTE'),
+                _opcion(
+                  icono: Icons.menu_book_outlined,
+                  titulo: 'Manuales de usuario',
+                  subtitulo: 'Aprende a utilizar TecnoAgro',
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ManualUsuarioScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 12),
+                _tituloGrupo('SESIÓN'),
+                _opcion(
+                  icono: Icons.logout_rounded,
+                  titulo: cerrando ? 'Cerrando sesión...' : 'Cerrar sesión',
+                  color: Colors.red.shade700,
+                  onTap: cerrando || eliminando
+                      ? null
+                      : () async {
+                          final ok = await _confirmarCierre(sheet);
+                          if (!ok || !sheet.mounted) return;
+                          setSheet(() => cerrando = true);
+                          try {
+                            await onCerrarSesion();
+                          } finally {
+                            if (sheet.mounted) {
+                              setSheet(() => cerrando = false);
+                            }
+                          }
+                        },
+                ),
+                _opcion(
+                  icono: Icons.delete_outline_rounded,
+                  titulo: eliminando ? 'Eliminando cuenta...' : 'Eliminar cuenta',
+                  subtitulo: 'Esta acción no se puede deshacer',
+                  color: Colors.red.shade700,
+                  onTap: cerrando || eliminando
+                      ? null
+                      : () async {
+                          final ok = await _confirmarEliminacion(sheet);
+                          if (!ok || !sheet.mounted) return;
+                          setSheet(() => eliminando = true);
+                          final resultado =
+                              await PerfilService.eliminarCuenta();
+                          if (!sheet.mounted) return;
+                          if (!resultado.ok) {
+                            setSheet(() => eliminando = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(resultado.mensaje),
+                                backgroundColor: Colors.red.shade700,
+                              ),
+                            );
+                            return;
+                          }
+                          final prefs = await SharedPreferences.getInstance();
+                          for (final key in [
+                            'jwt_token',
+                            'user_name',
+                            'user_rol',
+                            'user_id',
+                          ]) {
+                            await prefs.remove(key);
+                          }
+                          CarritoService.instancia.vaciar();
+                          if (!context.mounted) return;
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BienvenidoScreen(),
+                            ),
+                            (_) => false,
+                          );
+                        },
                 ),
               ],
             ),
@@ -244,3 +304,46 @@ void mostrarPerfil(
     ),
   );
 }
+
+Widget _tituloGrupo(String texto) => Align(
+  alignment: Alignment.centerLeft,
+  child: Padding(
+    padding: const EdgeInsets.fromLTRB(4, 12, 4, 5),
+    child: Text(
+      texto,
+      style: const TextStyle(
+        color: AppColors.textoSecundario,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1,
+      ),
+    ),
+  ),
+);
+
+Widget _opcion({
+  required IconData icono,
+  required String titulo,
+  String? subtitulo,
+  Color? color,
+  VoidCallback? onTap,
+}) => ListTile(
+  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+  leading: Icon(icono, color: color ?? AppColors.verdePrimario),
+  title: Text(titulo,
+      style: TextStyle(
+        color: color ?? AppColors.textoPrincipal,
+        fontWeight: FontWeight.w600,
+        fontSize: 14,
+      )),
+  subtitle: subtitulo == null
+      ? null
+      : Text(subtitulo,
+          style: const TextStyle(
+            color: AppColors.textoSecundario,
+            fontSize: 12,
+          )),
+  trailing: const Icon(Icons.chevron_right_rounded,
+      color: AppColors.textoPlaceholder),
+  onTap: onTap,
+);

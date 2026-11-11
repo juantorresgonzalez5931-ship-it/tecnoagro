@@ -12,6 +12,7 @@ import estadisticasRoutes from './routes/estadisticas.js';
 import { vencerReservas } from './controllers/pedido.js';
 import notificacionRoutes from './routes/notificacion.js';
 
+
 // CARGAR VARIABLES
 dotenv.config();
 conectaDB();

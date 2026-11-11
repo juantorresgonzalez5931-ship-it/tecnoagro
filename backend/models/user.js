@@ -54,7 +54,7 @@ export const obtenerPorEmail = async (email) => {
 export const obtenerPorId = async (id) => {
     const { data, error } = await supabase
         .from('usuarios')
-        .select('id, nombre, email, rol')
+        .select('id, nombre, email, telefono, rol')
         .eq('id', id)
         .single();
     return { data, error };
@@ -66,7 +66,7 @@ export const actualizarUsuario = async (id, campos) => {
         .from('usuarios')
         .update(campos)
         .eq('id', id)
-        .select()
+        .select('id, nombre, email, telefono, rol')
         .single();
     return { data, error };
 };
