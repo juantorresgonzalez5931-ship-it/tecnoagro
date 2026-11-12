@@ -9,7 +9,15 @@ import 'package:frontend/widgets/producto_tile.dart' show formatearPrecio;
 
 class DetalleEnfermedadScreen extends StatefulWidget {
   final int enfermedadId;
-  const DetalleEnfermedadScreen({super.key, required this.enfermedadId});
+
+  /// En el panel de admin se pasa false: la barra inferior la pone el panel.
+  final bool mostrarBarra;
+
+  const DetalleEnfermedadScreen({
+    super.key,
+    required this.enfermedadId,
+    this.mostrarBarra = true,
+  });
 
   @override
   State<DetalleEnfermedadScreen> createState() => _DetalleEnfermedadScreenState();
@@ -93,7 +101,9 @@ class _DetalleEnfermedadScreenState extends State<DetalleEnfermedadScreen> {
           Expanded(child: _cuerpo()),
         ]),
       ),
-      bottomNavigationBar: BarraNavegacion(actual: 0, onTap: (i) => navegarDesdeEnfermedades(context, i)),
+      bottomNavigationBar: widget.mostrarBarra
+          ? BarraNavegacion(actual: 0, onTap: (i) => navegarDesdeEnfermedades(context, i))
+          : null,
     );
   }
 }

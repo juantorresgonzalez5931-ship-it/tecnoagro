@@ -2,29 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 
 /// Cabecera de las pantallas internas: botón de volver + título centrado.
+/// El botón solo se muestra si hay una pantalla anterior a la que volver.
 class CabeceraPantalla extends StatelessWidget {
   final String titulo;
   const CabeceraPantalla({super.key, required this.titulo});
 
   @override
   Widget build(BuildContext context) {
+    final puedeVolver = Navigator.of(context).canPop();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(children: [
-        InkWell(
-          onTap: () => Navigator.pop(context),
-          customBorder: const CircleBorder(),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.borde),
+        if (puedeVolver)
+          InkWell(
+            onTap: () => Navigator.pop(context),
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.borde),
+              ),
+              child: Icon(Icons.arrow_back_ios_new, size: 16, color: AppColors.textoPrincipal),
             ),
-            child: Icon(Icons.arrow_back_ios_new, size: 16, color: AppColors.textoPrincipal),
-          ),
-        ),
+          )
+        else
+          const SizedBox(width: 40),
         Expanded(
           child: Text(
             titulo,

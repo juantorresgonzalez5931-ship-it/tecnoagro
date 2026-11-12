@@ -155,7 +155,12 @@ class _EnfermedadesScreenState extends State<EnfermedadesScreen> {
           esAdmin: _esAdmin,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => DetalleEnfermedadScreen(enfermedadId: lista[i].id)),
+            MaterialPageRoute(
+              builder: (_) => DetalleEnfermedadScreen(
+                enfermedadId: lista[i].id,
+                mostrarBarra: widget.mostrarBarra,
+              ),
+            ),
           ),
           onEditar: () => _abrirFormulario(lista[i]),
           onEliminar: () => _eliminar(lista[i]),

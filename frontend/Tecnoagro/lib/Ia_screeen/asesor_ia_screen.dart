@@ -7,27 +7,21 @@ import 'package:frontend/core/colores.dart';
 import 'package:frontend/core/navegacion.dart';
 import 'package:frontend/pantallas/login.dart';
 import 'package:frontend/service/services/api_config.dart';
-import 'package:frontend/models/producto_models.dart';
 import 'package:frontend/service/services/carrito_service.dart';
-import 'package:frontend/widgets/producto_tile.dart' show formatearPrecio;
 
 String get _chatUrl => '${ApiConfig.apiBaseUrl}/chat/mensaje';
+
+String _dinero(dynamic valor) {
+  final n = (num.tryParse('$valor') ?? 0).round();
+  return '\$${n.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.')}';
+}
 
 class _Mensaje {
   final String texto;
   final bool esUsuario;
   final bool verCatalogo; // true = debajo se muestra el botón "Ver productos"
-  final List<ProductoModels> productos;
+  final List<Map<String, dynamic>> productos; // recomendados: botón "Añadir al carrito"
   _Mensaje(this.texto, this.esUsuario, {this.verCatalogo = false, this.productos = const []});
-}
-
-String _plano(String s) {
-  const con = 'áéíóúü', sin = 'aeiouu';
-  var t = s.toLowerCase().trim();
-  for (var i = 0; i < con.length; i++) {
-    t = t.replaceAll(con[i], sin[i]);
-  }
-  return t.replaceAll(RegExp(r'[^a-z0-9ñ ]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
 }
 
 class AsesorIAScreen extends StatefulWidget {
@@ -64,6 +58,8 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     _scroll.dispose();
     super.dispose();
   }
+
+  /// Lee id y nombre desde el JWT guardado al iniciar sesión.
   Future<void> _cargarSesion() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token') ?? '';
@@ -95,7 +91,7 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
   Future<void> _irAlLogin() async {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
     if (!mounted) return;
-    _cargarSesion(); // al volver, revisa si ya inició sesión
+    _cargarSesion();
   }
 
   void _bajar() {
@@ -106,43 +102,17 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
       }
     });
   }
-  bool get _asesorOfrecioCatalogo {
-    final ultimo = _mensajes.where((m) => !m.esUsuario).lastOrNull;
-    return ultimo != null && (ultimo.verCatalogo || _plano(ultimo.texto).contains('catalogo'));
-  }
-
-  bool _quiereCatalogo(String texto) {
-    final t = _plano(texto);
-    final explicito = t.contains('catalogo') ||
-        RegExp(r'^(quiero )?ver (los |todos los )?productos$').hasMatch(t) ||
-        RegExp(r'^(muestrame|mostrar|mostrarme) (los |todos los )?productos$').hasMatch(t);
-    if (explicito) return true;
-    final afirma = RegExp(
-            r'^(si|claro|dale|ok|okay|listo|vale|de una|por favor|si claro|claro que si|si por favor|si quiero|quiero)$')
-        .hasMatch(t);
-    return afirma && _asesorOfrecioCatalogo;
-  }
 
   Future<void> _enviar([String? sugerencia]) async {
     final texto = (sugerencia ?? _controlador.text).trim();
     if (texto.isEmpty || _cargando || _usuarioId == null) return;
 
-    final pideCatalogo = _quiereCatalogo(texto);
     _controlador.clear();
     setState(() {
       _mensajes.add(_Mensaje(texto, true));
-      if (pideCatalogo) {
-        _mensajes.add(_Mensaje('¡Claro! Aquí tienes el catálogo de TecnoAgro.', false, verCatalogo: true));
-      } else {
-        _cargando = true;
-      }
+      _cargando = true;
     });
     _bajar();
-
-    if (pideCatalogo) {
-      abrirCatalogo(context);
-      return;
-    }
 
     try {
       final res = await http.post(
@@ -159,18 +129,13 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
 
       if (res.statusCode == 200) {
         _conversationId = data['conversation_id'].toString();
-        final respuesta = '${data['respuesta']}';
-        final productosJson = data['productos_recomendados'];
-        final productos = productosJson is List
-            ? productosJson
-                .whereType<Map>()
-                .map((e) => ProductoModels.fromJson(Map<String, dynamic>.from(e)))
-                .toList()
-            : <ProductoModels>[];
+        final productos = data['productos'] is List
+            ? List<Map<String, dynamic>>.from(
+                (data['productos'] as List).map((p) => Map<String, dynamic>.from(p as Map)))
+            : <Map<String, dynamic>>[];
         setState(() => _mensajes.add(_Mensaje(
-              respuesta,
+              data['respuesta'],
               false,
-              // Conserva el acceso al catálogo general cuando el servidor lo solicita.
               verCatalogo: data['accion'] == 'ver_catalogo',
               productos: productos,
             )));
@@ -185,105 +150,6 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     }
   }
 
-  void _agregarAReserva(ProductoModels producto) {
-    if (producto.stock != null && producto.stock! <= 0) {
-      _mostrarError('Este producto no tiene unidades disponibles actualmente.');
-      return;
-    }
-
-    CarritoService.instancia.agregar(CarritoItem(
-      id: producto.id.toString(),
-      nombre: producto.nombre,
-      categoria: producto.categoria ?? 'Sin categoría',
-      precio: producto.precio,
-      imagen: producto.imagenUrl,
-    ));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${producto.nombre} se agregó a tu lista de reserva. Confirma la reserva desde el carrito.'),
-        action: SnackBarAction(
-          label: 'VER RESERVA',
-          onPressed: () => abrirCarrito(context),
-        ),
-      ),
-    );
-  }
-
-  Widget _tarjetaProducto(ProductoModels producto) {
-    final sinStock = producto.stock != null && producto.stock! <= 0;
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.82,
-      margin: const EdgeInsets.only(top: 8, bottom: 6),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.blanco,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borde),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              width: 76,
-              height: 76,
-              child: producto.imagenUrl == null || producto.imagenUrl!.isEmpty
-                  ? Container(
-                      color: const Color(0xFFE6F2E6),
-                      child: const Icon(Icons.eco_outlined, color: AppColors.verdePrimario, size: 32),
-                    )
-                  : Image.network(
-                      producto.imagenUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFFE6F2E6),
-                        child: const Icon(Icons.image_not_supported_outlined, color: AppColors.verdePrimario),
-                      ),
-                    ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(producto.nombre,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textoPrincipal)),
-                if ((producto.categoria ?? '').isNotEmpty)
-                  Text(producto.categoria!, style: const TextStyle(fontSize: 12, color: AppColors.textoSecundario)),
-                const SizedBox(height: 4),
-                Text(formatearPrecio(producto.precio),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.verdePrimario)),
-                Text(
-                  producto.stock == null ? 'Disponibilidad no especificada' : (sinStock ? 'Agotado' : 'Disponibles: ${producto.stock}'),
-                  style: TextStyle(fontSize: 11, color: sinStock ? Colors.red : AppColors.textoSecundario),
-                ),
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: sinStock ? null : () => _agregarAReserva(producto),
-                    icon: const Icon(Icons.bookmark_add_outlined, size: 16),
-                    label: const Text('Reservar producto'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.verdePrimario,
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _mostrarError(String mensaje) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -291,19 +157,48 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     );
   }
 
-  /// Estilo de las respuestas del asesor (negritas, listas y tablas).
-  MarkdownStyleSheet get _estiloMarkdown => MarkdownStyleSheet(
-        p: const TextStyle(color: AppColors.textoPrincipal, fontSize: 14.5, height: 1.4),
-        strong: const TextStyle(color: AppColors.textoPrincipal, fontWeight: FontWeight.bold),
-        em: const TextStyle(fontStyle: FontStyle.italic),
-        listBullet: const TextStyle(color: AppColors.verdePrimario, fontWeight: FontWeight.bold),
-        listIndent: 18,
-        blockSpacing: 8,
-        tableHead: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-        tableBody: const TextStyle(color: AppColors.textoPrincipal, fontSize: 13),
-        tableBorder: TableBorder.all(color: AppColors.borde),
-        tableCellsPadding: const EdgeInsets.all(6),
-      );
+  // ───────────── Carrito ─────────────
+  // Recibe el producto que recomendó la IA: { id, nombre, categoria, precio, stock, imagen_url }.
+  void _agregarAlCarrito(Map<String, dynamic> producto) {
+    final id = '${producto['id']}';
+    final stock = int.tryParse('${producto['stock']}') ?? 0;
+    final carrito = CarritoService.instancia;
+    final enCarrito = carrito.items.where((i) => i.id == id).firstOrNull?.cantidad ?? 0;
+
+    if (enCarrito >= stock) {
+      _avisoCarrito('Ya tienes todas las unidades disponibles de ${producto['nombre']}', error: true);
+      return;
+    }
+
+    carrito.agregar(CarritoItem(
+      id: id,
+      nombre: '${producto['nombre']}',
+      categoria: '${producto['categoria'] ?? ''}',
+      precio: num.tryParse('${producto['precio']}') ?? 0,
+      imagen: producto['imagen_url']?.toString(),
+    ));
+    _avisoCarrito(enCarrito == 0
+        ? '${producto['nombre']} añadido al carrito'
+        : 'Sumaste otra unidad de ${producto['nombre']}');
+  }
+
+  void _avisoCarrito(String texto, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(texto),
+        backgroundColor: error ? Colors.orange.shade800 : Colors.green.shade700,
+        behavior: SnackBarBehavior.floating,
+        action: error
+            ? null
+            : SnackBarAction(
+                label: 'VER CARRITO',
+                textColor: Colors.white,
+                onPressed: () => abrirCarrito(context),
+              ),
+      ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +225,7 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
       ),
     );
   }
+
   Widget _sinSesion() {
     return Center(
       child: Padding(
@@ -408,6 +304,87 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     );
   }
 
+  /// Texto del mensaje: el usuario en texto plano, la IA con formato (negritas, listas, tablas).
+  Widget _texto(_Mensaje m) {
+    if (m.esUsuario) {
+      return SelectableText(m.texto, style: const TextStyle(color: AppColors.blanco));
+    }
+    const base = TextStyle(color: AppColors.textoPrincipal, fontSize: 14.5, height: 1.4);
+    return MarkdownBody(
+      data: m.texto,
+      selectable: true,
+      styleSheet: MarkdownStyleSheet(
+        p: base,
+        strong: base.copyWith(fontWeight: FontWeight.bold),
+        listBullet: base,
+        h1: base.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
+        h2: base.copyWith(fontSize: 16.5, fontWeight: FontWeight.bold),
+        h3: base.copyWith(fontSize: 15.5, fontWeight: FontWeight.bold),
+        tableBorder: TableBorder.all(color: AppColors.borde),
+        tableHead: base.copyWith(fontWeight: FontWeight.bold),
+        tableBody: base,
+        tableCellsPadding: const EdgeInsets.all(6),
+      ),
+    );
+  }
+
+  /// Tarjeta de un producto recomendado con su botón "Añadir al carrito".
+  Widget _tarjetaProducto(Map<String, dynamic> p) {
+    final stock = int.tryParse('${p['stock']}') ?? 0;
+    final agotado = stock <= 0;
+    final imagen = p['imagen_url']?.toString();
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.8,
+      margin: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.blanco,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borde),
+      ),
+      child: Row(children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: imagen == null || imagen.isEmpty
+                ? ColoredBox(color: Colors.grey.shade200, child: const Icon(Icons.inventory_2_outlined))
+                : Image.network(imagen,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        ColoredBox(color: Colors.grey.shade200, child: const Icon(Icons.image_not_supported))),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${p['nombre']}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: AppColors.textoPrincipal, fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 2),
+            Text(agotado ? 'Agotado' : _dinero(p['precio']),
+                style: TextStyle(
+                    color: agotado ? Colors.red.shade700 : AppColors.verdePrimario,
+                    fontWeight: FontWeight.bold)),
+          ]),
+        ),
+        const SizedBox(width: 8),
+        FilledButton.icon(
+          onPressed: agotado ? null : () => _agregarAlCarrito(p),
+          icon: const Icon(Icons.add_shopping_cart, size: 17),
+          label: const Text('Añadir'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.verdePrimario,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+        ),
+      ]),
+    );
+  }
+
   Widget _lista() {
     return ListView.builder(
       controller: _scroll,
@@ -429,7 +406,7 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
         }
         final m = _mensajes[i];
         final burbuja = Container(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.86),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -437,9 +414,7 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
             borderRadius: BorderRadius.circular(14),
             border: m.esUsuario ? null : Border.all(color: AppColors.borde),
           ),
-          child: m.esUsuario
-              ? SelectableText(m.texto, style: const TextStyle(color: AppColors.blanco))
-              : MarkdownBody(data: m.texto, selectable: true, styleSheet: _estiloMarkdown),
+          child: _texto(m),
         );
         return Align(
           alignment: m.esUsuario ? Alignment.centerRight : Alignment.centerLeft,
@@ -447,8 +422,7 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
             crossAxisAlignment: m.esUsuario ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               burbuja,
-              if (m.productos.isNotEmpty)
-                ...m.productos.map(_tarjetaProducto),
+              for (final p in m.productos) _tarjetaProducto(p),
               if (m.verCatalogo)
                 Padding(
                   padding: const EdgeInsets.only(top: 2, bottom: 6),

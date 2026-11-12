@@ -5,7 +5,6 @@ import 'package:frontend/pantallas/bienvenido.dart';
 import 'package:frontend/pantallas/enfermedades.dart';
 import 'package:frontend/service/services/carrito_service.dart';
 import 'package:frontend/admin/perfil_admin_page.dart';
-import '../core/colores.dart';
 import 'admin_dashboard_page.dart';
 import 'admin_productos_page.dart';
 import 'admin_reservas_page.dart';
@@ -26,34 +25,37 @@ class _AdminHomePageState extends State<AdminHomePage> {
   int _indice = 0;
 
   Future<void> _cerrarSesion() async {
-  final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
-  await prefs.clear();
+    await prefs.clear();
 
-   CarritoService.instancia.vaciar();
+    CarritoService.instancia.vaciar();
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const BienvenidoScreen(),
-    ),
-    (route) => false,
-  );
-}
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const BienvenidoScreen(),
+      ),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final paginas = [
       AdminDashboardPage(token: widget.token),
       AdminProductosPage(token: widget.token),
-
-      // Tu página
       AdminReservasPage(token: widget.token),
 
-      // Página agregada por tu compañero
-      const EnfermedadesScreen(mostrarBarra: false),
+      // Navigator propio: el detalle de enfermedad se abre dentro de la
+      // pestaña y la barra del admin sigue visible.
+      Navigator(
+        onGenerateRoute: (_) => MaterialPageRoute(
+          builder: (_) => const EnfermedadesScreen(mostrarBarra: false),
+        ),
+      ),
 
       PerfilAdminPage(
         onCerrarSesion: _cerrarSesion,

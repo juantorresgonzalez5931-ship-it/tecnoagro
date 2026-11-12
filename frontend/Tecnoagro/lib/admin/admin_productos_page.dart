@@ -26,6 +26,34 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
   List<Map<String, dynamic>> productos = [];
   bool cargando = true;
   String? error;
+  final _buscador = TextEditingController();
+  String _consulta = '';
+
+  @override
+  void dispose() {
+    _buscador.dispose();
+    super.dispose();
+  }
+
+  /// Minúsculas y sin tildes, para que "fungicida" encuentre "Fungicída".
+  String _limpiar(String t) => t
+      .toLowerCase()
+      .replaceAll('á', 'a')
+      .replaceAll('é', 'e')
+      .replaceAll('í', 'i')
+      .replaceAll('ó', 'o')
+      .replaceAll('ú', 'u')
+      .replaceAll('ñ', 'n');
+
+  /// Productos que coinciden con lo escrito (nombre, categoría o principio activo).
+  List<Map<String, dynamic>> get _filtrados {
+    final q = _limpiar(_consulta.trim());
+    if (q.isEmpty) return productos;
+    return productos.where((p) {
+      final texto = _limpiar('${p['nombre'] ?? ''} ${p['categoria'] ?? ''} ${p['principio_activo'] ?? ''}');
+      return q.split(' ').every(texto.contains);
+    }).toList();
+  }
 
   Map<String, String> get _headers => {...ApiConfig.headers, 'Authorization': 'Bearer ${widget.token}'};
   Uri _url([String extra = '']) => Uri.parse('${ApiConfig.apiBaseUrl}/productos$extra');
@@ -160,28 +188,80 @@ class _AdminProductosPageState extends State<AdminProductosPage> {
         ]),
       );
     }
+    final lista = _filtrados;
     return Column(children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: TextField(
+          controller: _buscador,
+          textInputAction: TextInputAction.search,
+          onChanged: (v) => setState(() => _consulta = v),
+          decoration: InputDecoration(
+            hintText: 'Buscar por nombre, categoría o principio activo',
+            hintStyle: TextStyle(color: AppColors.textoSecundario, fontSize: 14),
+            prefixIcon: Icon(Icons.search, color: AppColors.verdePrimario),
+            suffixIcon: _consulta.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      _buscador.clear();
+                      setState(() => _consulta = '');
+                    },
+                  ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: AppColors.borde),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: AppColors.borde),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: AppColors.verdePrimario, width: 1.5),
+            ),
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Text('${productos.length} productos',
+          child: Text(
+              _consulta.trim().isEmpty
+                  ? '${productos.length} productos'
+                  : '${lista.length} de ${productos.length} productos',
               style: TextStyle(color: AppColors.textoSecundario, fontWeight: FontWeight.w600)),
         ),
       ),
       Expanded(
         child: RefreshIndicator(
           onRefresh: cargar,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
-            itemCount: productos.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (_, i) => _TarjetaProducto(
-              producto: productos[i],
-              onEditar: () => _formulario(productos[i]),
-              onEliminar: () => _eliminar(productos[i]),
-            ),
-          ),
+          child: lista.isEmpty
+              ? ListView(children: [
+                  const SizedBox(height: 60),
+                  Icon(Icons.search_off, size: 52, color: AppColors.textoSecundario),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text('No hay productos que coincidan',
+                        style: TextStyle(color: AppColors.textoSecundario)),
+                  ),
+                ])
+              : ListView.separated(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                  itemCount: lista.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) => _TarjetaProducto(
+                    producto: lista[i],
+                    onEditar: () => _formulario(lista[i]),
+                    onEliminar: () => _eliminar(lista[i]),
+                  ),
+                ),
         ),
       ),
     ]);
