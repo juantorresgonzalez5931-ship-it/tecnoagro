@@ -24,7 +24,6 @@ class GoogleService {
 
     final GoogleSignInAccount cuenta;
     try {
-      await GoogleSignIn.instance.signOut(); // así siempre muestra las cuentas
       cuenta = await GoogleSignIn.instance.authenticate();
     } on GoogleSignInException catch (e) {
       debugPrint('Google Sign-In: ${e.code} ${e.description}');

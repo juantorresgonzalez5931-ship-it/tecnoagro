@@ -7,6 +7,9 @@ import 'package:frontend/core/colores.dart';
 import 'package:frontend/core/navegacion.dart';
 import 'package:frontend/pantallas/login.dart';
 import 'package:frontend/service/services/api_config.dart';
+import 'package:frontend/models/producto_models.dart';
+import 'package:frontend/service/services/carrito_service.dart';
+import 'package:frontend/widgets/producto_tile.dart' show formatearPrecio;
 
 String get _chatUrl => '${ApiConfig.apiBaseUrl}/chat/mensaje';
 
@@ -14,7 +17,8 @@ class _Mensaje {
   final String texto;
   final bool esUsuario;
   final bool verCatalogo; // true = debajo se muestra el botón "Ver productos"
-  _Mensaje(this.texto, this.esUsuario, {this.verCatalogo = false});
+  final List<ProductoModels> productos;
+  _Mensaje(this.texto, this.esUsuario, {this.verCatalogo = false, this.productos = const []});
 }
 
 String _plano(String s) {
@@ -156,11 +160,19 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
       if (res.statusCode == 200) {
         _conversationId = data['conversation_id'].toString();
         final respuesta = '${data['respuesta']}';
+        final productosJson = data['productos_recomendados'];
+        final productos = productosJson is List
+            ? productosJson
+                .whereType<Map>()
+                .map((e) => ProductoModels.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
+            : <ProductoModels>[];
         setState(() => _mensajes.add(_Mensaje(
               respuesta,
               false,
-              // Botón si el servidor lo pide o si la respuesta habla del catálogo.
-              verCatalogo: data['accion'] == 'ver_catalogo' || _plano(respuesta).contains('catalogo'),
+              // Conserva el acceso al catálogo general cuando el servidor lo solicita.
+              verCatalogo: data['accion'] == 'ver_catalogo',
+              productos: productos,
             )));
       } else {
         _mostrarError(data['error'] ?? 'No se pudo obtener respuesta');
@@ -171,6 +183,105 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
       if (mounted) setState(() => _cargando = false);
       _bajar();
     }
+  }
+
+  void _agregarAReserva(ProductoModels producto) {
+    if (producto.stock != null && producto.stock! <= 0) {
+      _mostrarError('Este producto no tiene unidades disponibles actualmente.');
+      return;
+    }
+
+    CarritoService.instancia.agregar(CarritoItem(
+      id: producto.id.toString(),
+      nombre: producto.nombre,
+      categoria: producto.categoria ?? 'Sin categoría',
+      precio: producto.precio,
+      imagen: producto.imagenUrl,
+    ));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${producto.nombre} se agregó a tu lista de reserva. Confirma la reserva desde el carrito.'),
+        action: SnackBarAction(
+          label: 'VER RESERVA',
+          onPressed: () => abrirCarrito(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _tarjetaProducto(ProductoModels producto) {
+    final sinStock = producto.stock != null && producto.stock! <= 0;
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.82,
+      margin: const EdgeInsets.only(top: 8, bottom: 6),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.blanco,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borde),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 76,
+              height: 76,
+              child: producto.imagenUrl == null || producto.imagenUrl!.isEmpty
+                  ? Container(
+                      color: const Color(0xFFE6F2E6),
+                      child: const Icon(Icons.eco_outlined, color: AppColors.verdePrimario, size: 32),
+                    )
+                  : Image.network(
+                      producto.imagenUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFFE6F2E6),
+                        child: const Icon(Icons.image_not_supported_outlined, color: AppColors.verdePrimario),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(producto.nombre,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textoPrincipal)),
+                if ((producto.categoria ?? '').isNotEmpty)
+                  Text(producto.categoria!, style: const TextStyle(fontSize: 12, color: AppColors.textoSecundario)),
+                const SizedBox(height: 4),
+                Text(formatearPrecio(producto.precio),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.verdePrimario)),
+                Text(
+                  producto.stock == null ? 'Disponibilidad no especificada' : (sinStock ? 'Agotado' : 'Disponibles: ${producto.stock}'),
+                  style: TextStyle(fontSize: 11, color: sinStock ? Colors.red : AppColors.textoSecundario),
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: sinStock ? null : () => _agregarAReserva(producto),
+                    icon: const Icon(Icons.bookmark_add_outlined, size: 16),
+                    label: const Text('Reservar producto'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.verdePrimario,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _mostrarError(String mensaje) {
@@ -336,6 +447,8 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
             crossAxisAlignment: m.esUsuario ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               burbuja,
+              if (m.productos.isNotEmpty)
+                ...m.productos.map(_tarjetaProducto),
               if (m.verCatalogo)
                 Padding(
                   padding: const EdgeInsets.only(top: 2, bottom: 6),
