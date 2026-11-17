@@ -12,10 +12,7 @@ import {
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const GROQ_MODEL = 'openai/gpt-oss-120b';
-<<<<<<< HEAD
-=======
 
->>>>>>> 46375dfc1cdc4fdace7a5f491ef1a640f12f9812
 const MSG_FUERA_DE_TEMA =
     'Lo siento, solo puedo ayudarte con temas de agronomía y con los productos de TecnoAgro. ¿Te gustaría conocer nuestro catálogo?';
 const MSG_IR_A_CATALOGO = '¡Claro! Toca el botón para ir a nuestros productos.';
