@@ -56,7 +56,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget build(BuildContext context) {
     return PopScope(
       child: Scaffold(
-        
         backgroundColor: AppColors.fondoCrema,
         appBar: AppBar(
           title: const Text('Panel de administración'),
@@ -65,30 +64,32 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           automaticallyImplyLeading: false,
           actions: [
             IconButton(
-                icon: const Icon(Icons.refresh), onPressed: cargarEstadisticas),
+              icon: const Icon(Icons.refresh),
+              onPressed: cargarEstadisticas,
+            ),
           ],
         ),
         body: cargando
             ? const Center(child: CircularProgressIndicator())
             : error != null
-                ? Center(child: Text(error!))
-                : RefreshIndicator(
-                    onRefresh: cargarEstadisticas,
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        _tarjetasResumen(),
-                        const SizedBox(height: 20),
-                        _seccionPedidosPorEstado(),
-                        const SizedBox(height: 20),
-                        _seccionTopProductos(),
-                        const SizedBox(height: 20),
-                        _seccionStockBajo(),
-                        const SizedBox(height: 20),
-                        _seccionUltimosPedidos(),
-                      ],
-                    ),
-                  ),
+            ? Center(child: Text(error!))
+            : RefreshIndicator(
+                onRefresh: cargarEstadisticas,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _tarjetasResumen(),
+                    const SizedBox(height: 20),
+                    _seccionPedidosPorEstado(),
+                    const SizedBox(height: 20),
+                    _seccionTopProductos(),
+                    const SizedBox(height: 20),
+                    _seccionStockBajo(),
+                    const SizedBox(height: 20),
+                    _seccionUltimosPedidos(),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -119,11 +120,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               children: [
                 Icon(i[2] as IconData, color: AppColors.verdePrimario),
                 const SizedBox(height: 6),
-                Text(i[1] as String,
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
-                Text(i[0] as String,
-                    style: const TextStyle(color: Colors.grey)),
+                Text(
+                  i[1] as String,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  i[0] as String,
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -132,8 +139,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _titulo(String t) => Text(t,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+  Widget _titulo(String t) => Text(
+    t,
+    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  );
 
   Widget _seccionPedidosPorEstado() {
     final estados = Map<String, dynamic>.from(stats!['pedidos_por_estado']);
@@ -144,21 +153,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         _titulo('Pedidos por estado'),
         const SizedBox(height: 8),
         if (estados.isEmpty) const Text('Aún no hay pedidos'),
-        ...estados.entries.map((e) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${e.key}: ${e.value}'),
-                  const SizedBox(height: 4),
-                  LinearProgressIndicator(
-                    value: total == 0 ? 0 : (e.value as int) / total,
-                    minHeight: 8,
-                    color: AppColors.verdePrimario,
-                  ),
-                ],
-              ),
-            )),
+        ...estados.entries.map(
+          (e) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${e.key}: ${e.value}'),
+                const SizedBox(height: 4),
+                LinearProgressIndicator(
+                  value: total == 0 ? 0 : (e.value as int) / total,
+                  minHeight: 8,
+                  color: AppColors.verdePrimario,
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -170,13 +181,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       children: [
         _titulo('Productos más vendidos'),
         if (lista.isEmpty) const Text('Sin ventas registradas'),
-        ...lista.asMap().entries.map((e) => ListTile(
-              dense: true,
-              leading: CircleAvatar(child: Text('${e.key + 1}')),
-              title: Text(e.value['nombre'] ?? ''),
-              subtitle: Text('${e.value['unidades']} unidades'),
-              trailing: Text(_moneda(e.value['ingresos'])),
-            )),
+        ...lista.asMap().entries.map(
+          (e) => ListTile(
+            dense: true,
+            leading: CircleAvatar(child: Text('${e.key + 1}')),
+            title: Text(e.value['nombre'] ?? ''),
+            subtitle: Text('${e.value['unidades']} unidades'),
+            trailing: Text(_moneda(e.value['ingresos'])),
+          ),
+        ),
       ],
     );
   }
@@ -188,16 +201,100 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       children: [
         _titulo('Stock bajo'),
         if (lista.isEmpty) const Text('Todo el inventario está bien'),
-        ...lista.map((p) => ListTile(
-              dense: true,
-              leading: const Icon(Icons.warning_amber, color: Colors.red),
-              title: Text(p['nombre'] ?? ''),
-              trailing: Text('${p['stock']} uds',
+        ...lista.map(
+          (p) => ListTile(
+            dense: true,
+            leading: const Icon(Icons.warning_amber, color: Colors.red),
+            title: Text(p['nombre'] ?? ''),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${p['stock']} uds',
                   style: const TextStyle(
-                      color: Colors.red, fontWeight: FontWeight.bold)),
-            )),
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 50),
+                IconButton(
+                  tooltip: 'Agregar stock',
+                  icon: const Icon(
+                    Icons.add_circle_outline,
+                    color: AppColors.verdePrimario,
+                  ),
+                  onPressed: () => _dialogoAgregarStock(p),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _dialogoAgregarStock(Map<String, dynamic> p) async {
+    final controller = TextEditingController();
+    final cantidad = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Agregar stock\n${p['nombre'] ?? ''}'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Cantidad a agregar'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, int.tryParse(controller.text)),
+            child: const Text('Agregar'),
+          ),
+        ],
+      ),
+    );
+
+    if (cantidad == null || cantidad <= 0) return;
+
+    final actual = int.tryParse('${p['stock']}') ?? 0;
+    final ok = await _actualizarStock(p['id'], actual + cantidad);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Stock actualizado: ${p['nombre']}'
+              : 'No se pudo actualizar el stock',
+        ),
+      ),
+    );
+    if (ok) cargarEstadisticas();
+  }
+
+  Future<bool> _actualizarStock(dynamic id, int nuevoStock) async {
+    try {
+      final res = await http.put(
+        Uri.parse('${ApiConfig.apiBaseUrl}/productos/$id'),
+        headers: {
+          ...ApiConfig.headers,
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'stock': nuevoStock}),
+      );
+      if (res.statusCode != 200) {
+        debugPrint('Actualizar stock: ${res.statusCode} ${res.body}');
+      }
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error actualizar stock: $e');
+      return false;
+    }
   }
 
   Widget _seccionUltimosPedidos() {
@@ -207,13 +304,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       children: [
         _titulo('Últimos pedidos'),
         if (lista.isEmpty) const Text('Sin pedidos'),
-        ...lista.map((p) => ListTile(
-              dense: true,
-              leading: const Icon(Icons.receipt),
-              title: Text(p['usuario']?['nombre'] ?? 'Cliente'),
-              subtitle: Text('${p['estado'] ?? 'pendiente'}'),
-              trailing: Text(_moneda(p['total'])),
-            )),
+        ...lista.map(
+          (p) => ListTile(
+            dense: true,
+            leading: const Icon(Icons.receipt),
+            title: Text(p['usuario']?['nombre'] ?? 'Cliente'),
+            subtitle: Text('${p['estado'] ?? 'pendiente'}'),
+            trailing: Text(_moneda(p['total'])),
+          ),
+        ),
       ],
     );
   }

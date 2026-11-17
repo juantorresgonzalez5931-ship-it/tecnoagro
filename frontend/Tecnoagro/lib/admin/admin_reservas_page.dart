@@ -241,6 +241,43 @@ class _AdminReservasPageState extends State<AdminReservasPage> {
 
                       Text('Total: \$${pedido!['total']}'),
 
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Productos pedidos',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      if (((pedido!['detalles'] as List?) ?? []).isEmpty)
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Sin productos registrados'),
+                        ),
+                      ...((pedido!['detalles'] as List?) ?? []).map((d) {
+                        final nombre =
+                            d['producto']?['nombre'] ??
+                            d['productos']?['nombre'] ??
+                            'Producto';
+                        final cantidad = d['cantidad'] ?? 0;
+                        final subtotal =
+                            d['subtotal'] ??
+                            ((num.tryParse('${d['precio_unitario']}') ?? 0) *
+                                (num.tryParse('$cantidad') ?? 0));
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text('$cantidad x $nombre')),
+                              Text('\$$subtotal'),
+                            ],
+                          ),
+                        );
+                      }),
+
                       const SizedBox(height: 20),
 
                       ElevatedButton(

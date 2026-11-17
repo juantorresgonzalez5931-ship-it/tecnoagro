@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/core/navegacion.dart';
 import 'package:frontend/pantallas/login.dart';
+import 'package:frontend/pantallas/detalle_producto.dart';
+import 'package:frontend/models/producto_models.dart';
 import 'package:frontend/service/services/api_config.dart';
 import 'package:frontend/service/services/carrito_service.dart';
 
@@ -154,6 +156,17 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mensaje), backgroundColor: Colors.red.shade700),
+    );
+  }
+
+  // Abre la ficha del producto recomendado usando el modelo y la pantalla existentes.
+  void _abrirDetalleProducto(Map<String, dynamic> producto) {
+    final modelo = ProductoModels.fromJson(producto);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetalleProductoScreen(producto: modelo),
+      ),
     );
   }
 
@@ -343,33 +356,45 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
         border: Border.all(color: AppColors.borde),
       ),
       child: Row(children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: SizedBox(
-            width: 56,
-            height: 56,
-            child: imagen == null || imagen.isEmpty
-                ? ColoredBox(color: Colors.grey.shade200, child: const Icon(Icons.inventory_2_outlined))
-                : Image.network(imagen,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        ColoredBox(color: Colors.grey.shade200, child: const Icon(Icons.image_not_supported))),
-          ),
-        ),
-        const SizedBox(width: 10),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('${p['nombre']}',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: AppColors.textoPrincipal, fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(height: 2),
-            Text(agotado ? 'Agotado' : _dinero(p['precio']),
-                style: TextStyle(
-                    color: agotado ? Colors.red.shade700 : AppColors.verdePrimario,
-                    fontWeight: FontWeight.bold)),
-          ]),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => _abrirDetalleProducto(p),
+            child: Row(children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: imagen == null || imagen.isEmpty
+                      ? ColoredBox(color: Colors.grey.shade200, child: const Icon(Icons.inventory_2_outlined))
+                      : Image.network(imagen,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => ColoredBox(
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.image_not_supported))),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${p['nombre']}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: AppColors.textoPrincipal, fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(agotado ? 'Agotado' : _dinero(p['precio']),
+                      style: TextStyle(
+                          color: agotado ? Colors.red.shade700 : AppColors.verdePrimario,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  const Text('Ver características',
+                      style: TextStyle(color: AppColors.textoSecundario, fontSize: 11)),
+                ]),
+              ),
+            ]),
+          ),
         ),
         const SizedBox(width: 8),
         FilledButton.icon(

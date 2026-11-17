@@ -24,6 +24,9 @@ class GoogleService {
 
     final GoogleSignInAccount cuenta;
     try {
+      // No llamar signOut() antes de authenticate().
+      // En Android, signOut() limpia la credencial de Credential Manager y
+      // puede provocar "Account reauth failed" al seleccionar una cuenta.
       cuenta = await GoogleSignIn.instance.authenticate();
     } on GoogleSignInException catch (e) {
       debugPrint('Google Sign-In: ${e.code} ${e.description}');
@@ -38,6 +41,11 @@ class GoogleService {
       Uri.parse('${ApiConfig.authBaseUrl}/google'),
       headers: ApiConfig.headers,
       body: jsonEncode({'idToken': idToken}),
+    ).timeout(
+      const Duration(seconds: 25),
+      onTimeout: () => throw Exception(
+        'El servidor está tardando demasiado. Intenta nuevamente en unos segundos.',
+      ),
     );
     final esJson = (response.headers['content-type'] ?? '').contains('application/json');
     final datos = esJson ? jsonDecode(response.body) as Map<String, dynamic> : <String, dynamic>{};

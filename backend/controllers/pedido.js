@@ -225,7 +225,11 @@ export const buscarPedidoPorCodigo = async (req, res) => {
     const codigo = req.params.codigo.trim().toUpperCase();
     const { data, error } = await obtenerPedidoPorCodigo(codigo);
     if (error || !data) return res.status(404).json({ error: 'Codigo no encontrado' });
-    return res.status(200).json(data);
+
+    // Trae también los productos de la reserva
+    const { data: completo } = await obtenerPedidoConDetalles(data.id);
+
+    return res.status(200).json({ ...data, ...(completo || {}) });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
