@@ -36,8 +36,6 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-
-
 // RUTAS DE AUTENTICACION
 app.use('/auth', authRoutes);
 // RUTAS DE USUARIOS
