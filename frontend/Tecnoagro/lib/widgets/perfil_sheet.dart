@@ -8,6 +8,7 @@ import 'package:frontend/pantallas/manual_usuario_screen.dart';
 import 'package:frontend/service/services/carrito_service.dart';
 import 'package:frontend/service/services/perfil_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/pantallas/quienes_somos_screen.dart';
 
 /// Mi Perfil: conserva el acceso al login cuando no hay sesión.
 Future<void> abrirPerfil(
@@ -227,6 +228,20 @@ void mostrarPerfil(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const ManualUsuarioScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _opcion(
+                  icono: Icons.storefront_outlined,
+                  titulo: 'Quiénes somos',
+                  subtitulo: 'Conoce el almacén y a sus creadores',
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const QuienesSomosScreen(),
                       ),
                     );
                   },
