@@ -225,11 +225,7 @@ export const buscarPedidoPorCodigo = async (req, res) => {
     const codigo = req.params.codigo.trim().toUpperCase();
     const { data, error } = await obtenerPedidoPorCodigo(codigo);
     if (error || !data) return res.status(404).json({ error: 'Codigo no encontrado' });
-
-    // Trae también los productos de la reserva
-    const { data: completo } = await obtenerPedidoConDetalles(data.id);
-
-    return res.status(200).json({ ...data, ...(completo || {}) });
+    return res.status(200).json(data);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -260,6 +256,37 @@ export const cambiarEstadoPedido = async (req, res) => {
       await devolverStock(
         pedido.detalles.map((d) => ({ producto_id: d.producto.id, cantidad: d.cantidad }))
       );
+    }
+
+    // Crear una notificación para el usuario después de actualizar la reserva.
+    // Se usa una sola notificación tipo "reserva", compatible con la pantalla actual.
+    if (estado === 'entregado' || estado === 'cancelado') {
+      try {
+        const productosTexto = (pedido.detalles ?? [])
+          .map((detalle) => {
+            const nombre = detalle.producto?.nombre ?? 'Producto';
+            return `${detalle.cantidad} x ${nombre}`;
+          })
+          .join(', ');
+
+        const esEntregado = estado === 'entregado';
+        const { error: errorNotificacion } = await crearNotificacion({
+          usuario_id: pedido.usuario_id,
+          tipo: 'reserva',
+          titulo: esEntregado ? 'Reserva entregada' : 'Reserva cancelada',
+          mensaje: esEntregado
+            ? `Tu reserva ${pedido.codigo} fue marcada como entregada. Productos: ${productosTexto}.`
+            : `Tu reserva ${pedido.codigo} fue cancelada. Productos: ${productosTexto}.`,
+          leida: false,
+        });
+
+        if (errorNotificacion) {
+          console.error('Error al crear notificación de cambio de estado:', errorNotificacion.message);
+        }
+      } catch (errorNotificacion) {
+        // No se revierte el cambio de estado si falla la notificación.
+        console.error('Error al crear notificación de cambio de estado:', errorNotificacion.message);
+      }
     }
 
     return res.status(200).json({ message: 'Estado actualizado', pedido: data[0] });
