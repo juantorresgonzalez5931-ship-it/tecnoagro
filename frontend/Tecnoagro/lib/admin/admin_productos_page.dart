@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../core/colores.dart';
 
-const _categorias = ['Herbicida agrícola', 'Insecticida', 'Fungicida agrícola', 'Abono'];
+const _categorias = ['Herbicida agrícola', 'Insecticida', 'Fungicida agrícola','Coadyuvante', 'Abono'];
 const _stockBajo = 5;
 
 String _dinero(dynamic valor) {

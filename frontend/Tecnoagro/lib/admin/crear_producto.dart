@@ -16,7 +16,7 @@ class CrearProductoScreen extends StatefulWidget {
 
 class _CrearProductoScreenState extends State<CrearProductoScreen> {
   // Cambia esta lista si manejas otras categorías.
-  static const _categorias = ['Herbicida agrícola', 'Insecticida', 'Fungicida agrícola', 'Abono'];
+  static const _categorias = ['Herbicida agrícola', 'Insecticida', 'Fungicida agrícola' ,'Coadyuvante','Abono'];
 
   final _nombre = TextEditingController();
   final _principio = TextEditingController();
