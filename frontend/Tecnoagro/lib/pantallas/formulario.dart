@@ -1,5 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
+import 'package:frontend/pantallas/documento_legal.dart';
 import 'package:frontend/widgets/app_text_field.dart';
 import '../service/services/user_service.dart';
 import 'package:frontend/widgets/boton_google.dart';
@@ -20,21 +22,26 @@ class _FormularioState extends State<Formulario> {
   final _passwordCtrl = TextEditingController();
   final _userService = UserService();
 
+  // Enlaces tocables dentro del texto de aceptación.
+  late final TapGestureRecognizer _tapTerminos;
+  late final TapGestureRecognizer _tapPrivacidad;
+
   DateTime? _fecha;
   bool _cargando = false;
   bool _verPassword = false;
+  bool _aceptaTerminos = false;
 
-  // Requisitos de la contraseña: texto visible -> regla
-  final _reglas = <String, RegExp>{
-    'Mínimo 8 caracteres': RegExp(r'.{8,}'),
-    'Una letra mayúscula': RegExp(r'[A-Z]'),
-    'Una letra minúscula': RegExp(r'[a-z]'),
-    'Un número': RegExp(r'[0-9]'),
-    'Un carácter especial (! @ # \$ % & * ...)': RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]'),
-  };
+  @override
+  void initState() {
+    super.initState();
+    _tapTerminos = TapGestureRecognizer()..onTap = () => abrirTerminos(context);
+    _tapPrivacidad = TapGestureRecognizer()..onTap = () => abrirPrivacidad(context);
+  }
 
   @override
   void dispose() {
+    _tapTerminos.dispose();
+    _tapPrivacidad.dispose();
     for (final c in [_nombreCtrl, _fechaCtrl, _emailCtrl, _telefonoCtrl, _passwordCtrl]) {
       c.dispose();
     }
@@ -77,15 +84,17 @@ class _FormularioState extends State<Formulario> {
       return 'Escribe un correo electrónico válido';
     }
     if (!RegExp(r'^\d{10}$').hasMatch(_telefonoCtrl.text.trim())) return 'El teléfono debe tener 10 dígitos';
-    if (_reglas.values.any((r) => !r.hasMatch(_passwordCtrl.text))) {
-      return 'La contraseña no cumple todos los requisitos';
-    }
+    if (_passwordCtrl.text.length < 6) return 'La contraseña debe tener al menos 6 caracteres';
+    if (!_aceptaTerminos) return 'Debes aceptar los términos y condiciones y la política de privacidad';
     return null;
   }
 
   Future<void> _registrar() async {
     final error = _validar();
-    if (error != null) return _mensaje(error, esError: true);
+    if (error != null) {
+      _mensaje(error, esError: true);
+      return;
+    }
     setState(() => _cargando = true);
     try {
       final respuesta = await _userService.crearCuenta(
@@ -129,29 +138,43 @@ class _FormularioState extends State<Formulario> {
         ),
       );
 
-  Widget _requisitosPassword() => ValueListenableBuilder<TextEditingValue>(
-        valueListenable: _passwordCtrl,
-        builder: (_, v, __) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          for (final r in _reglas.entries)
-            Padding(
-              padding: const EdgeInsets.only(top: 6, left: 4),
-              child: Row(children: [
-                Icon(
-                  r.value.hasMatch(v.text) ? Icons.check_circle : Icons.radio_button_unchecked,
-                  size: 16,
-                  color: r.value.hasMatch(v.text) ? AppColors.verdePrimario : Colors.grey.shade500,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(r.key,
-                      style: TextStyle(
-                          fontSize: 12.5,
-                          color: r.value.hasMatch(v.text) ? AppColors.verdePrimario : Colors.grey.shade600)),
-                ),
-              ]),
-            ),
-        ]),
-      );
+  /// Casilla de aceptación con enlaces a los términos y a la política de privacidad.
+  Widget _aceptacion() {
+    final base = TextStyle(color: AppColors.textoSecundario, fontSize: 13.5, height: 1.4);
+    final enlace = TextStyle(
+      color: AppColors.verdePrimario,
+      fontWeight: FontWeight.bold,
+      decoration: TextDecoration.underline,
+      decorationColor: AppColors.verdePrimario,
+    );
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(
+        width: 24,
+        height: 24,
+        child: Checkbox(
+          value: _aceptaTerminos,
+          onChanged: _cargando ? null : (v) => setState(() => _aceptaTerminos = v ?? false),
+          activeColor: AppColors.verdePrimario,
+          side: BorderSide(color: Colors.grey.shade400, width: 1.5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text.rich(
+          TextSpan(style: base, children: [
+            const TextSpan(text: 'Acepto los '),
+            TextSpan(text: 'Términos y Condiciones', style: enlace, recognizer: _tapTerminos),
+            const TextSpan(text: ' y la '),
+            TextSpan(text: 'Política de Privacidad', style: enlace, recognizer: _tapPrivacidad),
+            const TextSpan(text: ' de TecnoAgro.'),
+          ]),
+        ),
+      ),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +231,7 @@ class _FormularioState extends State<Formulario> {
               ),
               AppTextField(
                 label: 'Contraseña',
-                hint: 'Crea una contraseña segura',
+                hint: 'Mínimo 6 caracteres',
                 controller: _passwordCtrl,
                 obscureText: !_verPassword,
                 textInputAction: TextInputAction.done,
@@ -219,9 +242,10 @@ class _FormularioState extends State<Formulario> {
                   onPressed: () => setState(() => _verPassword = !_verPassword),
                 ),
               ),
-              _requisitosPassword(),
             ]),
-            const SizedBox(height: 26),
+            const SizedBox(height: 18),
+            _aceptacion(),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _cargando ? null : _registrar,
               child: _cargando
