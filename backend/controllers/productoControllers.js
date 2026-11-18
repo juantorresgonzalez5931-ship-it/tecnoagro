@@ -4,7 +4,9 @@ import {
   obtenerPorCategoria,
   crearProducto,
   actualizarProducto,
-  eliminarProducto
+  eliminarProducto,
+  desvincularDeEnfermedades,
+  archivarProducto
 } from '../models/productoModel.js';
 import { supabase } from '../config/supabase.js';
 import { crearNotificaciones } from '../models/notificacionModel.js';
@@ -132,17 +134,20 @@ export const editar = async (req, res) => {
     const campos = { nombre, descripcion, categoria, principio_activo, precio, stock };
     Object.keys(campos).forEach((k) => campos[k] === undefined && delete campos[k]);
 
-    const { data, error } = await actualizarProducto(id, campos);
+    // Si se envió una imagen nueva, también se actualiza.
+    if (req.file) campos.imagen_url = req.file.path;
+
+    const { data: actualizado, error } = await actualizarProducto(id, campos);
 
     if (error) {
       console.error('Error al actualizar producto:', error);
       return res.status(500).json({ error: 'Error al actualizar el producto' });
     }
-    if (!data || data.length === 0) {
+    if (!actualizado || actualizado.length === 0) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    return res.status(200).json({ message: 'Producto actualizado', producto: data[0] });
+    return res.status(200).json({ message: 'Producto actualizado', producto: actualizado[0] });
   } catch (error) {
     console.error('Error inesperado en editar:', error);
     return res.status(500).json({ error: error.message });
@@ -153,9 +158,31 @@ export const editar = async (req, res) => {
 export const eliminar = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Primero se quita de las listas de tratamiento de enfermedades para no
+    // dejar referencias huérfanas.
+    const { error: errVinc } = await desvincularDeEnfermedades(id);
+    if (errVinc) {
+      console.error('Error al desvincular el producto de enfermedades:', errVinc);
+      return res.status(500).json({ error: 'Error al eliminar el producto' });
+    }
+
     const { error } = await eliminarProducto(id);
 
     if (error) {
+      // Si el producto ya tiene pedidos asociados, la base de datos impide
+      // borrarlo. En ese caso se oculta (archiva) para no romper el historial.
+      if (error.code === '23503') {
+        const { error: errArchivar } = await archivarProducto(id);
+        if (errArchivar) {
+          console.error('Error al archivar producto:', errArchivar);
+          return res.status(500).json({ error: 'Error al eliminar el producto' });
+        }
+        return res.status(200).json({
+          message: 'El producto tiene reservas asociadas, por lo que fue archivado (ya no se muestra en la tienda)'
+        });
+      }
+
       console.error('Error al eliminar producto:', error);
       return res.status(500).json({ error: 'Error al eliminar el producto' });
     }

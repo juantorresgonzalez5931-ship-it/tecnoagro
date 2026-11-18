@@ -12,7 +12,7 @@ export const crearUsuario = async (nombre, email, password, telefono, rol, codig
 };
 
 // 2. Crear usuario autenticado con Google
-export const crearUsuarioGoogle = async ({ nombre, email, googleId, avatar = null, rol = 'cliente' }) => {
+export const crearUsuarioGoogle = async ({ nombre, email, googleId, avatar = null, rol = 'usuario' }) => {
     const { data, error } = await supabase
         .from('usuarios')
         .insert({
@@ -32,11 +32,11 @@ export const crearUsuarioGoogle = async ({ nombre, email, googleId, avatar = nul
     return { data, error };
 };
 
-// 3. Obtener todos los usuarios
+// 3. Obtener todos los usuarios (sin exponer el hash de la contraseña)
 export const obtenerUsuarios = async () => {
     const { data, error } = await supabase
         .from('usuarios')
-        .select('*');
+        .select('id, nombre, email, telefono, rol, isVerified, avatar, created_at');
     return { data, error };
 };
 

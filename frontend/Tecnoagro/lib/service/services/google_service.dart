@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
+import 'carrito_service.dart';
 
 /// Se lanza cuando la persona cierra el selector de cuentas sin elegir ninguna.
 class GoogleCancelado implements Exception {}
@@ -55,10 +56,20 @@ class GoogleService {
 
     final usuario = datos['usuario'] as Map<String, dynamic>;
     final nombre = '${usuario['nombre'] ?? 'Usuario'}';
+    final rol = '${usuario['rol'] ?? 'usuario'}'.trim();
+
+    final idRaw = usuario['id'];
+    final idUsuario = idRaw is int ? idRaw : int.tryParse('$idRaw');
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('jwt_token', '${datos['token']}');
     await prefs.setString('user_name', nombre);
-    await prefs.setString('user_rol', '${usuario['rol'] ?? 'usuario'}');
+    await prefs.setString('user_rol', rol);
+    if (idUsuario != null) {
+      await prefs.setInt('user_id', idUsuario);
+      // Recupera el carrito guardado de esta cuenta.
+      await CarritoService.instancia.cargarCarritoUsuario();
+    }
     return nombre;
   }
 }

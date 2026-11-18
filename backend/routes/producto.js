@@ -8,11 +8,12 @@ const router = express.Router();
 // GET - Obtener todos
 router.get('/productos', listarProductos);
 
+// GET - Obtener por categoría
+// (debe ir ANTES de /productos/:id, o Express tomaría "categoria" como un id)
+router.get('/productos/categoria/:categoria', obtenerPorCat);
+
 // GET - Obtener por ID
 router.get('/productos/:id', obtenerProducto);
-
-// GET - Obtener por categoría
-router.get('/productos/categoria/:categoria', obtenerPorCat);
 
 // Rutas privadas
 // POST - Crear producto

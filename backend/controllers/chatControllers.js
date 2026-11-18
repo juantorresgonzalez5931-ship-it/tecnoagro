@@ -197,17 +197,22 @@ const respuestaRapida = (historial, mensajeUsuario) => {
     return null;
 };
 
-// POST /chat/mensaje  { usuario_id, conversation_id (opcional), mensaje }
+// POST /chat/mensaje  { conversation_id (opcional), mensaje }
+// El usuario sale del token, nunca del cuerpo de la petición.
 // Responde { conversation_id, respuesta, accion, productos }
 //   accion: 'ver_catalogo' | null
 //   productos: productos del catálogo recomendados en la respuesta (para "Añadir al carrito")
 export const enviarMensaje = async (req, res) => {
     try {
-        console.log('chatControllers v2 activo');
-        const { usuario_id, conversation_id, mensaje } = req.body;
+        const { conversation_id, mensaje } = req.body;
+        const usuario_id = req.usuario?.id;
 
-        if (!usuario_id || !mensaje) {
-            return res.status(400).json({ error: 'usuario_id y mensaje son requeridos' });
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'Debes iniciar sesión para hablar con el asesor' });
+        }
+
+        if (!mensaje || !String(mensaje).trim()) {
+            return res.status(400).json({ error: 'El mensaje es requerido' });
         }
 
         let conversacionId = conversation_id;
@@ -217,6 +222,15 @@ export const enviarMensaje = async (req, res) => {
                 return res.status(500).json({ error: 'Error al crear la conversación' });
             }
             conversacionId = nuevaConv[0].id;
+        } else {
+            // No se puede escribir en una conversación de otra persona.
+            const { data: conv } = await obtenerConversacionPorId(conversacionId);
+            if (!conv) {
+                return res.status(404).json({ error: 'Conversación no encontrada' });
+            }
+            if (String(conv.user_id) !== String(usuario_id) && req.usuario.rol?.trim() !== 'admin') {
+                return res.status(403).json({ error: 'No tienes acceso a esta conversación' });
+            }
         }
 
         await crearMensaje(conversacionId, 'user', mensaje);
@@ -259,11 +273,12 @@ export const enviarMensaje = async (req, res) => {
     }
 };
 
-// GET /chat/conversaciones?usuario_id=
+// GET /chat/conversaciones
+// El usuario sale del token, no de la URL.
 export const misConversaciones = async (req, res) => {
     try {
-        const { usuario_id } = req.query;
-        if (!usuario_id) return res.status(400).json({ error: 'usuario_id requerido' });
+        const usuario_id = req.usuario?.id;
+        if (!usuario_id) return res.status(401).json({ error: 'Debes iniciar sesión' });
 
         const { data, error } = await obtenerConversacionesPorUsuario(usuario_id);
         if (error) return res.status(500).json({ error: 'Error al obtener las conversaciones' });
@@ -282,6 +297,11 @@ export const mensajesDeConversacion = async (req, res) => {
         const { data: conversacion } = await obtenerConversacionPorId(id);
         if (!conversacion) return res.status(404).json({ error: 'Conversación no encontrada' });
 
+        const esAdmin = req.usuario?.rol?.trim() === 'admin';
+        if (!esAdmin && String(conversacion.user_id) !== String(req.usuario?.id)) {
+            return res.status(403).json({ error: 'No tienes acceso a esta conversación' });
+        }
+
         const { data, error } = await obtenerMensajesPorConversacion(id);
         if (error) return res.status(500).json({ error: 'Error al obtener los mensajes' });
 
@@ -295,6 +315,15 @@ export const mensajesDeConversacion = async (req, res) => {
 export const borrarConversacion = async (req, res) => {
     try {
         const { id } = req.params;
+
+        const { data: conversacion } = await obtenerConversacionPorId(id);
+        if (!conversacion) return res.status(404).json({ error: 'Conversación no encontrada' });
+
+        const esAdmin = req.usuario?.rol?.trim() === 'admin';
+        if (!esAdmin && String(conversacion.user_id) !== String(req.usuario?.id)) {
+            return res.status(403).json({ error: 'No tienes acceso a esta conversación' });
+        }
+
         const { error } = await eliminarConversacion(id);
         if (error) return res.status(500).json({ error: 'Error al eliminar la conversación' });
         return res.status(200).json({ message: 'Conversación eliminada' });

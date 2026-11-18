@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       debugPrint('ID USUARIO: ${usuario.id}');
       print('USUARIO COMPLETO: ${respuesta['usuario']}');
       print('ID USUARIO: ${usuario.id}');
-      final String rol = respuesta['usuario']['rol'] ?? 'usuario';
+      final String rol = '${respuesta['usuario']['rol'] ?? 'usuario'}'.trim();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', token);
       await prefs.setString('user_name', usuario.nombre ?? 'Usuario');

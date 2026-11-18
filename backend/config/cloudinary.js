@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 
-console.log('Cloud name:', process.env.CLOUDINARY_CLOUD_NAME); console.log('API key:', process.env.CLOUDINARY_API_KEY);
+// No se imprimen credenciales de Cloudinary en los logs del servidor.
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
