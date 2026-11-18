@@ -38,7 +38,6 @@ const AVISO_SIN_PREGUNTAS =
     'Respóndeme de nuevo SIN ninguna pregunta: asume lo más común, explícame qué hacer en pasos cortos ' +
     'y recomiéndame del catálogo los productos adecuados (nombre exacto en negrita, máximo 3). ' +
     'Si no hay uno adecuado, dilo y dame el consejo igualmente.';
-
 // ¿La respuesta es un cuestionario? (2 o más signos de pregunta)
 const hacePreguntasDeMas = (texto) => (String(texto).match(/\?/g) ?? []).length >= 2;
 
