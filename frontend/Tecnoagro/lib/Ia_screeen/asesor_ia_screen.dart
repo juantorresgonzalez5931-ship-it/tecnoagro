@@ -117,11 +117,12 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     _bajar();
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token') ?? '';
       final res = await http.post(
         Uri.parse(_chatUrl),
-        headers: ApiConfig.headers,
+        headers: {...ApiConfig.headers, 'Authorization': 'Bearer $token'},
         body: jsonEncode({
-          'usuario_id': _usuarioId,
           'conversation_id': _conversationId,
           'mensaje': texto,
         }),

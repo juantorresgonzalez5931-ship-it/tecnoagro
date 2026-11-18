@@ -9,7 +9,9 @@ export const crearCodigo = async (usuario_id, codigo, expires_at) => {
     return { data, error };
 };
 
-// Buscar un código válido (no usado) para ese usuario
+// Buscar un código válido (no usado) para ese usuario.
+// Se ordena del más reciente al más antiguo y se toma uno solo porque el
+// usuario puede haber pedido varios códigos y ya no existiría una fila única.
 export const obtenerCodigoValido = async (usuario_id, codigo) => {
     const { data, error } = await supabase
         .from('recovery_codes')
@@ -17,7 +19,9 @@ export const obtenerCodigoValido = async (usuario_id, codigo) => {
         .eq('usuario_id', usuario_id)
         .eq('codigo', codigo)
         .eq('usado', false)
-        .single();
+        .order('expires_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
     return { data, error };
 };
 

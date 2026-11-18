@@ -40,7 +40,10 @@ class SesionService {
       return null;
     }
 
-    return datos['id'];
+    final id = datos['id'];
+    if (id is int) return id;
+    if (id is num) return id.toInt();
+    return int.tryParse('$id');
   }
 
   static Future<String?> nombre() async {
@@ -50,7 +53,8 @@ class SesionService {
       return null;
     }
 
-    return datos['nombre'];
+    final nombre = datos['nombre'];
+    return nombre == null ? null : '$nombre';
   }
 
   static Future<String?> email() async {
@@ -60,7 +64,8 @@ class SesionService {
       return null;
     }
 
-    return datos['email'];
+    final email = datos['email'];
+    return email == null ? null : '$email';
   }
 
   static Future<String?> rol() async {
@@ -70,7 +75,8 @@ class SesionService {
       return null;
     }
 
-    return datos['rol'];
+    final rol = datos['rol'];
+    return rol == null ? null : '$rol'.trim();
   }
 
   static Future<bool> esAdmin() async {
@@ -91,7 +97,7 @@ class SesionService {
       }
     }
 
-    return datos['rol'] == 'admin';
+    return '${datos['rol'] ?? ''}'.trim() == 'admin';
   }
 
   static Future<bool> haySesion() async {

@@ -50,12 +50,15 @@ export const crearPedidoConDetalles = async (req, res) => {
       });
     }
 
-    // Une productos repetidos sumando sus cantidades
+    // Une productos repetidos sumando sus cantidades.
+    // Se usa String como clave para que un id enviado como texto ("3") y otro
+    // como número (3) cuenten como el mismo producto.
     const items = [
-      ...detalles.reduce(
-        (m, d) => m.set(d.producto_id, (m.get(d.producto_id) || 0) + Number(d.cantidad)),
-        new Map()
-      ),
+      ...detalles.reduce((m, d) => {
+        const key = String(d.producto_id);
+        m.set(key, (m.get(key) || 0) + Number(d.cantidad));
+        return m;
+      }, new Map()),
     ].map(([producto_id, cantidad]) => ({ producto_id, cantidad }));
 
     // Precio y stock reales desde la BD (no se confía en el cliente)
@@ -75,7 +78,7 @@ export const crearPedidoConDetalles = async (req, res) => {
       if (!Number.isInteger(cantidad) || cantidad < 1) {
         return res.status(400).json({ error: 'Cantidad invalida' });
       }
-      const p = productos.find((x) => x.id === d.producto_id);
+      const p = productos.find((x) => String(x.id) === String(d.producto_id));
       if (!p) return res.status(400).json({ error: `El producto ${d.producto_id} no existe` });
       if (p.stock < cantidad) {
         return res.status(400).json({ error: `Stock insuficiente para el producto ${p.id}` });
@@ -119,7 +122,7 @@ export const crearPedidoConDetalles = async (req, res) => {
     // Descontar stock al reservar (en paralelo)
     await Promise.all(
       filas.map((f) => {
-        const p = productos.find((x) => x.id === f.producto_id);
+        const p = productos.find((x) => String(x.id) === String(f.producto_id));
         return supabase
           .from('productos')
           .update({ stock: p.stock - f.cantidad })
@@ -135,7 +138,7 @@ export const crearPedidoConDetalles = async (req, res) => {
       try {
         const resumen = filas
           .map((f) => {
-            const p = productos.find((x) => x.id === f.producto_id);
+            const p = productos.find((x) => String(x.id) === String(f.producto_id));
             return `${f.cantidad} x ${p?.nombre ?? 'producto'}`;
           })
           .join(', ');
@@ -188,7 +191,7 @@ export const obtenerPedidoUsuario = async (req, res) => {
     const { data, error } = await obtenerPedidoConDetalles(id);
     if (error || !data) return res.status(404).json({ error: 'Reserva no encontrada' });
 
-    if (req.usuario.rol?.trim() !== 'admin' && data.usuario_id !== req.usuario.id) {
+    if (req.usuario.rol?.trim() !== 'admin' && String(data.usuario_id) !== String(req.usuario.id)) {
       return res.status(403).json({ error: 'No tienes acceso a esta reserva' });
     }
 

@@ -57,11 +57,20 @@ export const autenticarConGoogle = async (req, res) => {
             usuarioFinal = Array.isArray(nuevoUsuario) ? nuevoUsuario[0] : nuevoUsuario;
         }
 
-        // 3. Generar token de sesión JWT
+        // La columna `rol` puede venir con espacios al final (char(n)).
+        const rol = typeof usuarioFinal.rol === 'string' ? usuarioFinal.rol.trim() : usuarioFinal.rol;
+
+        // 3. Generar token de sesión JWT (mismo contenido que el login normal,
+        //    porque el frontend lee id, nombre y email desde el token).
         const token = jwt.sign(
-            { id: usuarioFinal.id, rol: usuarioFinal.rol },
+            {
+                id: usuarioFinal.id,
+                nombre: usuarioFinal.nombre,
+                email: usuarioFinal.email,
+                rol
+            },
             process.env.JWT_SECRET,
-            { expiresIn: '1d' }
+            { expiresIn: '7d' }
         );
 
         return res.status(200).json({
@@ -71,7 +80,7 @@ export const autenticarConGoogle = async (req, res) => {
                 id: usuarioFinal.id,
                 nombre: usuarioFinal.nombre,
                 email: usuarioFinal.email,
-                rol: usuarioFinal.rol,
+                rol,
                 avatar: usuarioFinal.avatar || avatar
             }
         });

@@ -1,5 +1,13 @@
 import { obtenerUsuarios, obtenerPorId, actualizarUsuario, eliminarUsuario } from "../models/user.js";
 
+// Solo estos campos puede modificar el usuario desde el panel.
+// La contraseña, el rol y el estado de verificación se gestionan en otros flujos.
+const CAMPOS_ACTUALIZABLES = ['nombre', 'email', 'telefono', 'avatar'];
+
+const esAdmin = (req) => req.usuario?.rol?.trim() === 'admin';
+
+const esMismoUsuario = (req, id) => String(req.usuario?.id) === String(id);
+
 export const getUsuarios = async (req, res) => {
     try {
         const { data, error } = await obtenerUsuarios();
@@ -14,6 +22,12 @@ export const getUsuarios = async (req, res) => {
 export const getUsuarioPorId = async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Un usuario solo puede consultar su propio perfil; el admin puede ver cualquiera.
+        if (!esAdmin(req) && !esMismoUsuario(req, id)) {
+            return res.status(403).json({ error: "No tienes permisos para ver este usuario" });
+        }
+
         const { data, error } = await obtenerPorId(id);
         if (error || !data) return res.status(404).json({ error: "Usuario no encontrado" });
         return res.status(200).json({ usuario: data });
@@ -27,22 +41,29 @@ export const getUsuarioPorId = async (req, res) => {
 export const updateUsuario = async (req, res) => {
     try {
         const { id } = req.params;
-        const campos = req.body;
 
-        if (!campos || Object.keys(campos).length === 0) {
+        // Un usuario solo puede editar su propio perfil; el admin puede editar cualquiera.
+        if (!esAdmin(req) && !esMismoUsuario(req, id)) {
+            return res.status(403).json({ error: "No tienes permisos para modificar este usuario" });
+        }
+
+        const body = req.body ?? {};
+        const campos = {};
+        for (const campo of CAMPOS_ACTUALIZABLES) {
+            if (body[campo] !== undefined) campos[campo] = body[campo];
+        }
+
+        if (Object.keys(campos).length === 0) {
             return res.status(400).json({ error: "No se enviaron campos para actualizar" });
         }
 
-        delete campos.rol;
-        delete campos.contrasena;
-
         const { data, error } = await actualizarUsuario(id, campos);
         if (error) return res.status(500).json({ error: "Error al actualizar el usuario" });
-        if (!data || data.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
+        if (!data) return res.status(404).json({ error: "Usuario no encontrado" });
 
         return res.status(200).json({
             message: "Usuario actualizado exitosamente",
-            usuario: data[0]
+            usuario: data
         });
     } catch (error) {
         console.error("Error al actualizar el usuario:", error);

@@ -23,6 +23,9 @@ const app = express();
 // LEER EL JSON
 app.use(express.json());
 
+// PERMITIR PETICIONES DESDE LA APP WEB (Flutter Web corre en otro origen)
+app.use(cors());
+
 // CREAMOS LA RUTA
 app.get('/', (req, res) => {
     res.json({

@@ -107,6 +107,15 @@ export const editar = async (req, res) => {
 export const eliminar = async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Primero se borran los vínculos con productos; si no, la clave
+        // foránea de enfermedad_producto impide eliminar la enfermedad.
+        const { error: errorVinculos } = await reemplazarProductos(id, []);
+        if (errorVinculos) {
+            console.error('Error al desvincular los productos de la enfermedad:', errorVinculos);
+            return res.status(500).json({ error: 'Error al eliminar la enfermedad' });
+        }
+
         const { error } = await eliminarEnfermedad(id);
         if (error) return res.status(500).json({ error: 'Error al eliminar la enfermedad' });
         return res.status(200).json({ message: 'Enfermedad eliminada' });

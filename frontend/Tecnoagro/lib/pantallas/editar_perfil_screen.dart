@@ -17,6 +17,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombre = TextEditingController();
   final _telefono = TextEditingController();
+  final _emailCtrl = TextEditingController();
   String _email = '';
   bool _cargando = true;
   bool _guardando = false;
@@ -31,6 +32,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   void dispose() {
     _nombre.dispose();
     _telefono.dispose();
+    _emailCtrl.dispose();
     super.dispose();
   }
 
@@ -64,6 +66,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
         // Se mantienen los datos del token si no se puede consultar el perfil.
       }
     }
+    _emailCtrl.text = _email.isEmpty ? 'No disponible' : _email;
     if (mounted) setState(() => _cargando = false);
   }
 
@@ -155,9 +158,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      controller: _email.isEmpty
-                          ? TextEditingController(text: 'No disponible')
-                          : TextEditingController(text: _email),
+                      controller: _emailCtrl,
                       readOnly: true,
                       decoration: const InputDecoration(
                         labelText: 'Correo electrónico',
