@@ -84,6 +84,11 @@ class _AsesorIAScreenState extends State<AsesorIAScreen> {
     }
     if (!mounted) return;
     setState(() {
+      // Si entró otra cuenta, la conversación anterior ya no le pertenece.
+      if (_usuarioId != null && _usuarioId != id) {
+        _conversationId = null;
+        _mensajes.clear();
+      }
       _usuarioId = id;
       _nombre = nombre;
       _cargandoSesion = false;

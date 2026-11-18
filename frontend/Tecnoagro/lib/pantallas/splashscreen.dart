@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:frontend/pantallas/bienvenido.dart';
+import 'package:frontend/service/services/carrito_service.dart';
 import '../core/colores.dart';
 
 class Splashscreen extends StatefulWidget {
@@ -14,6 +15,10 @@ class _SplashscreenState extends State<Splashscreen> {
   @override
   void initState() {
     super.initState();
+
+    // Si la sesión sigue guardada, recupera el carrito de esa cuenta.
+    CarritoService.instancia.cargarCarritoUsuario();
+
     Timer(const Duration(seconds: 3), () {
       if (!mounted) return;
       Navigator.pushReplacement(
