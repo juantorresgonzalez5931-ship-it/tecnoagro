@@ -40,11 +40,17 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
   bool get _hayNoLeidas => _lista.any((n) => !n.leida);
 
   Future<void> _marcarTodas() async {
-    try {
-      await _servicio.marcarTodasLeidas();
-      if (mounted) setState(() => [for (final n in _lista) n.leida = true]);
-    } catch (_) {}
+  try {
+    await _servicio.marcarTodasLeidas();
+    if (mounted) setState(() => [for (final n in _lista) n.leida = true]);
+  } catch (e) {
+    debugPrint('Error marcar todas: $e');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$e')),
+    );
   }
+}
 
   Future<void> _tocar(NotificacionModel n) async {
     if (!n.leida) {

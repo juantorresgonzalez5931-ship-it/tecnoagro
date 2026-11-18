@@ -48,11 +48,11 @@ export const marcarComoLeida = async (id, usuario_id) => {
     return { data, error };
 };
 
+
 export const marcarTodasComoLeidas = async (usuario_id) => {
-    const { error } = await supabase
-        .from('notificaciones')
-        .update({ leida: true })
-        .eq('usuario_id', usuario_id)
-        .eq('leida', false);
-    return { error };
+  return await supabase
+    .from('notificaciones')
+    .update({ leida: true })
+    .eq('usuario_id', usuario_id)
+    .eq('leida', false);
 };

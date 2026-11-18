@@ -54,9 +54,9 @@ Future<NotificacionesResultado> listar() async {
     headers: await _headers(),
   );
 
-  if (res.statusCode != 200) {
-    throw 'No se pudieron cargar las notificaciones';
-  }
+ if (res.statusCode != 200) {
+  throw 'Error ${res.statusCode}: ${res.body}';
+}
 
   final List<dynamic> data =
       jsonDecode(utf8.decode(res.bodyBytes));

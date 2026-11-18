@@ -13,7 +13,7 @@ dependencies:
 
   http: ^1.2.0
   shared_preferences: ^2.5.5
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^2.0.0
   image_picker: ^1.1.2
   google_sign_in: ^7.2.0
   url_launcher: ^6.3.1
@@ -25,8 +25,11 @@ dependencies:
   speech_to_text: ^7.5.0
   flutter_markdown_plus: ^1.0.12
 
+  # Manual de usuario en PDF
+  pdfx: ^2.9.2
+
 dev_dependencies:
-  flutter_test:
+  flutter:
     sdk: flutter
 
   flutter_lints: ^6.0.0
@@ -37,6 +40,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/manual/
 
   fonts:
     - family: GoogleSansFlex

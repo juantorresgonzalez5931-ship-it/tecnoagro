@@ -2,14 +2,14 @@ import {
   obtenerPorUsuario,
   contarNoLeidas,
   marcarComoLeida,
+  marcarTodasComoLeidas,
 } from '../models/notificacionModel.js';
 
 export const obtenerMisNotificaciones = async (req, res) => {
   try {
     const usuario_id = req.usuario.id;
 
-    const { data, error } =
-     await obtenerPorUsuario(usuario_id);
+    const { data, error } = await obtenerPorUsuario(usuario_id);
 
     if (error) {
       return res.status(500).json({
@@ -29,8 +29,7 @@ export const obtenerCantidadNoLeidas = async (req, res) => {
   try {
     const usuario_id = req.usuario.id;
 
-    const { count, error } =
-      await contarNoLeidas(usuario_id);
+    const { count, error } = await contarNoLeidas(usuario_id);
 
     if (error) {
       return res.status(500).json({
@@ -53,10 +52,7 @@ export const marcarLeida = async (req, res) => {
     const usuario_id = req.usuario.id;
     const { id } = req.params;
 
-    const { error } = await marcarComoLeida(
-      id,
-      usuario_id,
-    );
+    const { error } = await marcarComoLeida(id, usuario_id);
 
     if (error) {
       return res.status(500).json({
@@ -66,6 +62,26 @@ export const marcarLeida = async (req, res) => {
 
     return res.status(200).json({
       message: 'Notificación actualizada',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+};
+
+export const marcarTodasLeidas = async (req, res) => {
+  try {
+    const { error } = await marcarTodasComoLeidas(req.usuario.id);
+
+    if (error) {
+      return res.status(500).json({
+        error: 'Error al actualizar notificaciones',
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Notificaciones actualizadas',
     });
   } catch (error) {
     return res.status(500).json({

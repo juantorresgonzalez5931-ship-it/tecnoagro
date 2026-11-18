@@ -4,7 +4,7 @@ import 'package:frontend/pantallas/bienvenido.dart';
 import 'package:frontend/pantallas/login.dart';
 import 'package:frontend/pantallas/mis_reservas_screen.dart';
 import 'package:frontend/pantallas/editar_perfil_screen.dart';
-import 'package:frontend/pantallas/manual_usuario_screen.dart';
+import 'package:frontend/pantallas/manuales.dart';
 import 'package:frontend/service/services/carrito_service.dart';
 import 'package:frontend/service/services/perfil_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -227,7 +227,7 @@ void mostrarPerfil(
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const ManualUsuarioScreen(),
+                        builder: (_) => const ManualesScreen(),
                       ),
                     );
                   },
