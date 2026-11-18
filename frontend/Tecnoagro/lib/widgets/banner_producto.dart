@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/colores.dart';
 import 'package:frontend/models/producto_models.dart';
+import 'package:frontend/pantallas/detalle_producto.dart';
 
 /// Banner verde del inicio. Muestra el producto más nuevo del catálogo;
 /// si todavía no cargó (o no hay productos) muestra un texto general.
@@ -15,10 +16,23 @@ class BannerNuevoProducto extends StatelessWidget {
       child: Icon(Icons.eco_outlined, size: 44, color: AppColors.verdePrimario),
     );
     final url = producto?.imagenUrl;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: AppColors.verdePrimario, borderRadius: BorderRadius.circular(16)),
-      child: Row(children: [
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: producto == null
+            ? null
+            : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DetalleProductoScreen(producto: producto!),
+                  ),
+                ),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(color: AppColors.verdePrimario, borderRadius: BorderRadius.circular(16)),
+          child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('NUEVO PRODUCTO',
@@ -48,7 +62,9 @@ class BannerNuevoProducto extends StatelessWidget {
                 : Image.network(url, fit: BoxFit.cover, errorBuilder: (_, _, _) => vacio),
           ),
         ),
-      ]),
+          ]),
+        ),
+      ),
     );
   }
 }
